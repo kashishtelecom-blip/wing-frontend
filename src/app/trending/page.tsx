@@ -25,7 +25,7 @@ export default function TrendingPage() {
 
   useEffect(() => {
     if (authLoading || !user) return;
-    api.get('/wings/trending/hashtags')
+    api.get('/wings/trending/hashtags?limit=20')
       .then((res) => {
         const data = Array.isArray(res.data) ? res.data : [];
         setTrends(data.slice(0, 30));
