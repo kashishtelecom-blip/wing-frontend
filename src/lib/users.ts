@@ -51,6 +51,9 @@ export interface UserSettings {
 }
 
 export async function getUser(id: string): Promise<UserProfile> {
+  if (!id || id === 'undefined' || id === 'null') {
+    throw new Error('Invalid user ID');
+  }
   const res = await api.get('/users/' + id);
   return res.data;
 }

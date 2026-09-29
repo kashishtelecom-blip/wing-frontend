@@ -37,7 +37,7 @@ export function WingCard({ wing, onDeleted }: Props) {
   const liked = likedIds.has(wing._id);
   const reposted = repostedIds.has(wing._id);
   const bookmarked = bookmarkedIds.has(wing._id);
-  const isOwner = !isAnonymous && user?.userId === wing.author._id;
+  const isOwner = !isAnonymous && user?.userId === wing.author?._id;
   const authorVerified = (wing.author as any)?.isVerified;
   const authorAvatar = (wing.author as any)?.avatarUrl;
 
@@ -109,7 +109,7 @@ export function WingCard({ wing, onDeleted }: Props) {
                     <span className="font-semibold text-gray-700 dark:text-gray-300 italic">Anonymous</span>
                   ) : (
                     <>
-                      <Link href={'/profile/' + wing.author._id} className="font-semibold text-gray-900 dark:text-white hover:underline">
+                      <Link href={'/profile/' + (wing.author?._id || '')} className="font-semibold text-gray-900 dark:text-white hover:underline">
                         {wing.author.name || wing.author.username}
                       </Link>
                       {authorVerified && <VerifiedBadge />}
