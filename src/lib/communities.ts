@@ -1,30 +1,37 @@
 import api from './api';
 
+export interface CommunityUser {
+  _id: string;
+  username: string;
+  name?: string;
+  avatarUrl?: string;
+  isVerified?: boolean;
+}
+
 export interface Community {
   _id: string;
   name: string;
-  description: string;
-  emoji: string;
-  creator: { _id: string; username: string; name?: string; avatarUrl?: string; isVerified?: boolean };
-  members: any[];
-  membersCount: number;
-  postsCount: number;
+  description?: string;
+  emoji?: string;
+  creator: CommunityUser;
+  members: string[];
   isPublic: boolean;
   tags: string[];
+  membersCount: number;
+  postsCount: number;
   createdAt: string;
 }
 
 export interface CommunityMessage {
   _id: string;
   community: string;
-  sender: { _id: string; username: string; name?: string; avatarUrl?: string; isVerified?: boolean };
+  sender: CommunityUser;
   text: string;
   createdAt: string;
 }
 
-export async function getAllCommunities(search?: string): Promise<Community[]> {
-  const url = search ? '/communities?q=' + encodeURIComponent(search) : '/communities';
-  const res = await api.get(url);
+export async function getCommunities(q?: string): Promise<Community[]> {
+  const res = await api.get('/communities' + (q ? `?q=${encodeURIComponent(q)}` : ''));
   return res.data || [];
 }
 
@@ -34,13 +41,13 @@ export async function getMyCommunities(): Promise<Community[]> {
 }
 
 export async function getCommunity(id: string): Promise<Community> {
-  const res = await api.get('/communities/' + id);
+  const res = await api.get(`/communities/${id}`);
   return res.data;
 }
 
 export async function createCommunity(data: {
   name: string;
-  description: string;
+  description?: string;
   emoji?: string;
   isPublic?: boolean;
   tags?: string[];
@@ -50,40 +57,36 @@ export async function createCommunity(data: {
 }
 
 export async function joinCommunity(id: string) {
-  const res = await api.post('/communities/' + id + '/join');
+  const res = await api.post(`/communities/${id}/join`);
   return res.data;
 }
 
 export async function leaveCommunity(id: string) {
-  const res = await api.delete('/communities/' + id + '/leave');
+  const res = await api.delete(`/communities/${id}/leave`);
   return res.data;
 }
 
 export async function deleteCommunity(id: string) {
-  const res = await api.delete('/communities/' + id);
+  const res = await api.delete(`/communities/${id}`);
   return res.data;
 }
 
-export async function addMembers(communityId: string, userIds: string[]) {
-  const res = await api.post('/communities/' + communityId + '/add-members', { userIds });
+export async function addMembers(id: string, userIds: string[]) {
+  const res = await api.post(`/communities/${id}/add-members`, { userIds });
   return res.data;
 }
 
-export async function removeMember(communityId: string, userId: string) {
-  const res = await api.delete('/communities/' + communityId + '/members/' + userId);
+export async function removeMember(id: string, userId: string) {
+  const res = await api.delete(`/communities/${id}/members/${userId}`);
   return res.data;
 }
 
-export async function getCommunityMessages(communityId: string): Promise<CommunityMessage[]> {
-  try {
-    const res = await api.get('/communities/' + communityId + '/messages', { timeout: 10000 });
-    return res.data || [];
-  } catch {
-    return [];
-  }
+export async function getCommunityMessages(id: string): Promise<CommunityMessage[]> {
+  const res = await api.get(`/communities/${id}/messages`);
+  return res.data || [];
 }
 
-export async function sendCommunityMessage(communityId: string, text: string): Promise<CommunityMessage> {
-  const res = await api.post('/communities/' + communityId + '/messages', { text }, { timeout: 10000 });
+export async function sendCommunityMessage(id: string, text: string): Promise<CommunityMessage> {
+  const res = await api.post(`/communities/${id}/messages`, { text });
   return res.data;
 }

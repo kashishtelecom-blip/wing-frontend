@@ -10,6 +10,7 @@ import { useAuth } from '@/lib/auth-context';
 import { NavBar } from '@/components/NavBar';
 import { Avatar } from '@/components/Avatar';
 import { VerifiedBadge } from '@/components/VerifiedBadge';
+import api from '@/lib/api';
 import {
   Community, getCommunity, joinCommunity, leaveCommunity, deleteCommunity,
   addMembers, removeMember,
@@ -25,14 +26,12 @@ export default function CommunityDetailPage() {
   const [working, setWorking] = useState(false);
   const [error, setError] = useState('');
 
-  // Invite dialog state
   const [showInvite, setShowInvite] = useState(false);
   const [candidates, setCandidates] = useState<any[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [inviting, setInviting] = useState(false);
 
-  // Group chat state
   const [showChat, setShowChat] = useState(false);
   const [messages, setMessages] = useState<CommunityMessage[]>([]);
   const [chatText, setChatText] = useState('');
@@ -119,12 +118,8 @@ export default function CommunityDetailPage() {
     setShowInvite(true);
     setSelectedIds(new Set());
     try {
-      const token =
-        typeof window !== 'undefined' ? localStorage.getItem('wing_token') : '';
-      const res = await fetch('http://localhost:3000/api/users?limit=50', {
-        headers: { Authorization: 'Bearer ' + token },
-      });
-      const data = await res.json();
+      const res = await api.get('/users?limit=50');
+      const data = res.data;
       const list = Array.isArray(data) ? data : data.data || [];
       const memberIds = new Set(
         (community?.members || []).map((m: any) => String(m?._id || m)),
@@ -414,7 +409,7 @@ export default function CommunityDetailPage() {
               Members ({community.membersCount})
             </p>
             <div className="space-y-1">
-                            {community.members.slice(0, 50).map((m: any) => {
+              {community.members.slice(0, 50).map((m: any) => {
                 const member = m._id ? m : { _id: m, username: 'user', name: '' };
                 const isMemberCreator =
                   String(member._id) === String(community.creator._id);
@@ -471,7 +466,6 @@ export default function CommunityDetailPage() {
         </div>
       </main>
 
-      {/* Invite dialog */}
       {showInvite && (
         <div
           className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
@@ -571,7 +565,6 @@ export default function CommunityDetailPage() {
         </div>
       )}
 
-      {/* Group chat panel */}
       {showChat && (
         <div
           className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
@@ -609,7 +602,7 @@ export default function CommunityDetailPage() {
                   No messages yet. Start the conversation!
                 </div>
               ) : (
-                                messages.map((msg) => {
+                messages.map((msg) => {
                   const senderId = msg.sender?._id || '';
                   const isMe = senderId === user?.userId;
                   const isOptimistic = msg._id.startsWith('temp-');
