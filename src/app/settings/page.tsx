@@ -15,6 +15,7 @@ import {
   deactivateAccount, exportData,
 } from '@/lib/users';
 import { Avatar } from '@/components/Avatar';
+import { getMediaUrl } from '@/lib/media';
 
 type Section = 'profile' | 'privacy' | 'notifications' | 'content' | 'blocked' | 'account';
 
@@ -109,7 +110,7 @@ export default function SettingsPage() {
       await updateSettings({ [key]: value } as any);
     } catch (err) {
       console.error(err);
-      setSettings(settings); // revert
+      setSettings(settings);
     }
   };
 
@@ -215,7 +216,15 @@ export default function SettingsPage() {
               <div className="flex items-center gap-6">
                 <div className="relative">
                   {avatarUrl ? (
-                    <img src={avatarUrl} alt={username} className="w-24 h-24 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700" />
+                    <img
+                      src={getMediaUrl(avatarUrl)}
+                      alt={username}
+                      className="w-24 h-24 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                      }}
+                    />
                   ) : (
                     <div className="w-24 h-24 rounded-full bg-blue-500 flex items-center justify-center text-white text-4xl font-bold">
                       {username?.[0]?.toUpperCase() || '?'}
