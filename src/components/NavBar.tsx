@@ -11,6 +11,7 @@ import { getUnreadCount } from '@/lib/notifications';
 import { MoreMenu } from './MoreMenu';
 import { VerifiedBadge } from './VerifiedBadge';
 import api from '@/lib/api';
+import { getMediaUrl } from '@/lib/media';
 
 export function NavBar() {
   const { user } = useAuth();
@@ -114,13 +115,25 @@ export function NavBar() {
           </button>
           <Link href={'/profile/' + user.userId} className="flex items-center gap-1.5 hover:opacity-80 transition">
             {avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={avatarUrl} alt={user.username} className="w-7 h-7 rounded-full object-cover" />
-            ) : (
-              <div className="w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-semibold">
-                {user.username?.[0]?.toUpperCase() || '?'}
-              </div>
-            )}
+  // eslint-disable-next-line @next/next/no-img-element
+  <img
+    src={getMediaUrl(avatarUrl)}
+    alt={user.username}
+    className="w-7 h-7 rounded-full object-cover"
+    onError={(e) => {
+      const target = e.target as HTMLImageElement;
+      target.style.display = 'none';
+      const fallback = target.nextElementSibling as HTMLElement | null;
+      if (fallback) fallback.style.display = 'flex';
+    }}
+  />
+) : null}
+<div
+  className="w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-semibold"
+  style={{ display: avatarUrl ? 'none' : 'flex' }}
+>
+  {user.username?.[0]?.toUpperCase() || '?'}
+</div>
             <span className="text-sm text-gray-700 dark:text-gray-300 hidden lg:inline">@{user.username}</span>
             {isVerified && <VerifiedBadge size="sm" />}
           </Link>

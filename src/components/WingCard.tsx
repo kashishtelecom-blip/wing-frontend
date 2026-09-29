@@ -167,11 +167,19 @@ export function WingCard({ wing, onDeleted }: Props) {
               </p>
 
               {wing.imageUrl && (
-                <div className="mt-3 rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={getMediaUrl(wing.imageUrl)} alt={wing.title || 'Wing'} className="w-full max-h-96 object-cover" />
-                </div>
-              )}
+            <div className="mt-3 rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800">
+              <img
+             src={getMediaUrl(wing.imageUrl)}
+              alt={wing.title || 'Wing image'}
+               className="w-full max-h-[500px] object-cover"
+               onError={(e) => {
+              const target = e.target as HTMLImageElement;
+            const parent = target.parentElement;
+        if (parent) parent.style.display = 'none';
+      }}
+    />
+  </div>
+)}
 
               {wing.videoUrl && (
                 <div className="mt-3 rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-black" onClick={(e) => e.stopPropagation()}>
