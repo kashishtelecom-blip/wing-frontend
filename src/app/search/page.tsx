@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Search as SearchIcon, X } from 'lucide-react';
@@ -23,7 +23,7 @@ interface SimpleUser {
 
 type Tab = 'top' | 'users' | 'wings';
 
-export default function SearchPage() {
+function SearchInner() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -38,18 +38,15 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
-  // Redirect if not logged in
   useEffect(() => {
     if (!authLoading && !user) router.push('/login');
   }, [user, authLoading, router]);
 
-  // Debounce input
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQuery(query.trim()), 350);
     return () => clearTimeout(t);
   }, [query]);
 
-  // Fetch on debounced query change
   useEffect(() => {
     if (authLoading || !user) return;
     if (!debouncedQuery) {
@@ -94,7 +91,6 @@ export default function SearchPage() {
     <div className="min-h-screen bg-white dark:bg-gray-950">
       <NavBar />
       <main className="max-w-2xl mx-auto">
-        {/* Search bar */}
         <div className="p-4 border-b border-gray-200 dark:border-gray-800 sticky top-0 bg-white dark:bg-gray-950 z-10">
           <div className="relative">
             <SearchIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -116,7 +112,6 @@ export default function SearchPage() {
             )}
           </div>
 
-          {/* Tabs */}
           <div className="flex gap-1 mt-3">
             {(['top', 'users', 'wings'] as Tab[]).map((t) => (
               <button
@@ -135,7 +130,6 @@ export default function SearchPage() {
           </div>
         </div>
 
-        {/* Content */}
         {loading ? (
           <div className="p-8 text-center text-gray-500">Searching…</div>
         ) : !debouncedQuery ? (
@@ -149,7 +143,6 @@ export default function SearchPage() {
           </div>
         ) : (
           <>
-            {/* Users section */}
             {showUsers && users.length > 0 && (
               <section>
                 {tab === 'top' && (
@@ -183,7 +176,6 @@ export default function SearchPage() {
               </section>
             )}
 
-            {/* Wings section */}
             {showWings && wings.length > 0 && (
               <section>
                 {tab === 'top' && (
@@ -200,7 +192,6 @@ export default function SearchPage() {
               </section>
             )}
 
-            {/* Empty states for single tabs */}
             {tab === 'users' && users.length === 0 && (
               <div className="p-8 text-center text-gray-500">
                 No users match &ldquo;{debouncedQuery}&rdquo;
@@ -215,5 +206,20 @@ export default function SearchPage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-white dark:bg-gray-950">
+          <NavBar />
+          <div className="p-8 text-center text-gray-500">Loading…</div>
+        </div>
+      }
+    >
+      <SearchInner />
+    </Suspense>
   );
 }
