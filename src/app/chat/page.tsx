@@ -315,6 +315,16 @@ function ChatPageInner() {
                 className="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-gray-800 dark:text-white rounded-full outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 disabled={sending}
               />
+               <input
+  id="chat-message-input"
+  name="message"
+  type="text"
+  value={text}
+  onChange={(e) => setText(e.target.value)}
+  placeholder="Start a new message"
+  className="..."
+  disabled={sending}
+/>
               <button
                 type="submit"
                 disabled={!text.trim() || sending}

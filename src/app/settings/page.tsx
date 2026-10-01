@@ -188,7 +188,6 @@ export default function SettingsPage() {
           <h1 className="text-xl font-bold text-gray-900 dark:text-white">Settings</h1>
         </div>
 
-        {/* Section tabs */}
         <div className="flex overflow-x-auto border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 sticky top-14 z-10">
           {sections.map(({ key, label, Icon }) => (
             <button
@@ -207,22 +206,22 @@ export default function SettingsPage() {
           ))}
         </div>
 
-        {/* PROFILE */}
         {section === 'profile' && (
           <div className="p-6 space-y-6">
-            {/* Avatar */}
             <div className="border-b border-gray-200 dark:border-gray-800 pb-6">
               <h2 className="font-semibold text-gray-900 dark:text-white mb-4">Profile picture</h2>
               <div className="flex items-center gap-6">
                 <div className="relative">
                   {avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={getMediaUrl(avatarUrl)}
-                      alt={username}
+                      alt={username || 'avatar'}
+                      width={96}
+                      height={96}
                       className="w-24 h-24 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700"
                       onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
+                        (e.target as HTMLImageElement).style.display = 'none';
                       }}
                     />
                   ) : (
@@ -237,7 +236,15 @@ export default function SettingsPage() {
                   )}
                 </div>
                 <div>
-                  <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
+                  <input
+                    ref={fileInputRef}
+                    id="avatar-file-input"
+                    name="avatar"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    className="hidden"
+                  />
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
@@ -252,7 +259,6 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {/* Subscription status */}
             <div className="border-b border-gray-200 dark:border-gray-800 pb-6">
               <h2 className="font-semibold text-gray-900 dark:text-white mb-4">Verification</h2>
               {isVerified && subscription?.isActive ? (
@@ -290,19 +296,40 @@ export default function SettingsPage() {
               )}
             </div>
 
-            {/* Profile form */}
             <form onSubmit={handleProfileSave} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Username</label>
-                <input type="text" value={username} disabled className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400 cursor-not-allowed" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
-                <input type="email" value={email} disabled className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400 cursor-not-allowed" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Display name</label>
+                <label htmlFor="settings-username" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Username
+                </label>
                 <input
+                  id="settings-username"
+                  name="username"
+                  type="text"
+                  value={username}
+                  disabled
+                  className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                />
+              </div>
+              <div>
+                <label htmlFor="settings-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Email
+                </label>
+                <input
+                  id="settings-email"
+                  name="email"
+                  type="email"
+                  value={email}
+                  disabled
+                  className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                />
+              </div>
+              <div>
+                <label htmlFor="settings-display-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Display name
+                </label>
+                <input
+                  id="settings-display-name"
+                  name="name"
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -311,8 +338,12 @@ export default function SettingsPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bio</label>
+                <label htmlFor="settings-bio" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Bio
+                </label>
                 <textarea
+                  id="settings-bio"
+                  name="bio"
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
                   maxLength={160}
@@ -335,7 +366,6 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* PRIVACY */}
         {section === 'privacy' && settings && (
           <div className="p-6 space-y-4">
             <div className="flex items-start justify-between gap-4 py-3 border-b border-gray-100 dark:border-gray-800">
@@ -356,8 +386,9 @@ export default function SettingsPage() {
               <p className="font-semibold text-gray-900 dark:text-white mb-2">Who can message you</p>
               <div className="space-y-2">
                 {(['everyone', 'followers', 'nobody'] as const).map((opt) => (
-                  <label key={opt} className="flex items-center gap-3 cursor-pointer p-2 -mx-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900">
+                  <label key={opt} htmlFor={`dm-${opt}`} className="flex items-center gap-3 cursor-pointer p-2 -mx-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900">
                     <input
+                      id={`dm-${opt}`}
                       type="radio"
                       name="dm"
                       checked={settings.privacy.allowDMsFrom === opt}
@@ -372,7 +403,6 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* NOTIFICATIONS */}
         {section === 'notifications' && settings && (
           <div className="p-6 space-y-4">
             <div className="flex items-start justify-between gap-4 py-3 border-b border-gray-100 dark:border-gray-800">
@@ -406,7 +436,6 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* CONTENT */}
         {section === 'content' && settings && (
           <div className="p-6 space-y-4">
             <div className="flex items-start justify-between gap-4 py-3 border-b border-gray-100 dark:border-gray-800">
@@ -426,7 +455,6 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* BLOCKED & MUTED */}
         {section === 'blocked' && (
           <div className="p-6 space-y-8">
             <div>
@@ -487,7 +515,6 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* ACCOUNT */}
         {section === 'account' && (
           <div className="p-6 space-y-6">
             <div className="border border-gray-200 dark:border-gray-800 rounded-xl p-5">

@@ -102,6 +102,17 @@ function SearchInner() {
               autoFocus
               className="w-full pl-9 pr-9 py-2 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 outline-none focus:border-blue-400"
             />
+<input
+  id="search-input"
+  name="search"
+  type="text"
+  value={query}
+  onChange={(e) => setQuery(e.target.value)}
+  placeholder="Search users and wings…"
+  autoFocus
+  className="..."
+/>
+
             {query && (
               <button
                 onClick={() => setQuery('')}
