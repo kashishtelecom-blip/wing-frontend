@@ -12,7 +12,6 @@ interface CountResponse {
 
 export default function WaitlistPage() {
   const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
   const [count, setCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -32,9 +31,8 @@ export default function WaitlistPage() {
     setError('');
     try {
       await api.post('/waitlist/join', {
-        email: email.trim().toLowerCase(),
-        name: name.trim() || undefined,
-      });
+  email: email.trim().toLowerCase(),
+});
       setSuccess(true);
       setCount((c) => (c ?? 0) + 1);
     } catch (err: any) {
@@ -135,21 +133,7 @@ export default function WaitlistPage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label htmlFor="waitlist-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Your name <span className="text-gray-400 font-normal">(optional)</span>
-                </label>
-                <input
-                  id="waitlist-name"
-                  name="name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Jane Doe"
-                  autoComplete="name"
-                  className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
+             
               <div>
                 <label htmlFor="waitlist-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Email address
