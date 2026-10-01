@@ -22,25 +22,39 @@ export function NavBar() {
   const [avatarUrl, setAvatarUrl] = useState('');
   const [isVerified, setIsVerified] = useState(false);
 
-  useEffect(() => {
-    if (!user) return;
+    useEffect(() => {
+    if (!user?.userId) return;
+
+    let cancelled = false;
+
     const load = async () => {
-      try { setUnread(await getUnreadCount()); } catch {}
+      if (cancelled) return;
+      try {
+        const n = await getUnreadCount();
+        if (!cancelled) setUnread(n);
+      } catch {}
       try {
         const chatRes = await api.get('/chat/unread-count').catch(() => ({ data: { count: 0 } }));
-        setChatUnread(chatRes?.data?.count || 0);
+        if (!cancelled) setChatUnread(chatRes?.data?.count || 0);
       } catch {}
       try {
         const res = await api.get('/users/me');
-        setAvatarUrl(res.data.avatarUrl || '');
-        setIsVerified(res.data.isVerified || false);
+        if (!cancelled) {
+          setAvatarUrl(res.data.avatarUrl || '');
+          setIsVerified(res.data.isVerified || false);
+        }
       } catch {}
     };
+
     load();
     const interval = setInterval(load, 30000);
-    return () => clearInterval(interval);
-  }, [user, pathname]);
 
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.userId, pathname]);
   if (!user) return null;
 
   const linkClass = (path: string) =>
