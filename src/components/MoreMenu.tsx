@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   List, Users, Rocket, Briefcase, Megaphone, Mic,
-  Settings, MoreHorizontal, BadgeCheck, Bookmark,
+  Settings, MoreHorizontal, BadgeCheck, Bookmark,Sparkles,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 
@@ -16,9 +16,9 @@ const MENU_ITEMS = [
   { href: '/business', label: 'Business', Icon: Briefcase },
   { href: '/ads', label: 'Ads', Icon: Megaphone },
   { href: '/spaces', label: 'Create your Space', Icon: Mic },
+  { href: '/waitlist', label: 'Invite friends', Icon: Sparkles },  // ← ADD
   { href: '/settings', label: 'Settings and privacy', Icon: Settings },
 ];
-
 export function MoreMenu() {
   const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
