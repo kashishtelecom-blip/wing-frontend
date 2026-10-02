@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft, Send, MessageCircle, Loader2, Image as ImageIcon, X as XIcon,
+  Copy, Trash2, Reply as ReplyIcon,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { NavBar } from '@/components/NavBar';
@@ -15,7 +16,7 @@ import {
   Conversation, ChatMessage,
   getConversations, startConversation,
   getMessages, sendMessage, markConversationRead,
-  uploadChatMedia,
+  uploadChatMedia, deleteMessage,
 } from '@/lib/chat';
 
 function ChatPageInner() {
@@ -38,6 +39,13 @@ function ChatPageInner() {
     previewUrl: string;
   } | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
+  const [contextMenu, setContextMenu] = useState<{
+    messageId: string;
+    x: number;
+    y: number;
+  } | null>(null);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
   const activeConvIdRef = useRef<string | null>(null);
@@ -130,9 +138,19 @@ function ChatPageInner() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
   }, [messages]);
 
-  const handleAttach = () => {
-    fileInputRef.current?.click();
-  };
+  // Close context menu on any click elsewhere
+  useEffect(() => {
+    if (!contextMenu) return;
+    const close = () => setContextMenu(null);
+    document.addEventListener('click', close);
+    document.addEventListener('scroll', close, true);
+    return () => {
+      document.removeEventListener('click', close);
+      document.removeEventListener('scroll', close, true);
+    };
+  }, [contextMenu]);
+
+  const handleAttach = () => fileInputRef.current?.click();
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -169,8 +187,10 @@ function ChatPageInner() {
     if ((!text.trim() && !pendingMedia) || !activeConv || sending) return;
     const sendText = text.trim();
     const media = pendingMedia;
+    const reply = replyingTo;
     setText('');
     setPendingMedia(null);
+    setReplyingTo(null);
     setSending(true);
     setError('');
 
@@ -181,6 +201,19 @@ function ChatPageInner() {
       text: sendText,
       mediaUrl: media?.url || null,
       mediaType: media?.type || null,
+      replyTo: reply
+        ? {
+            _id: reply._id,
+            text: reply.text,
+            mediaUrl: reply.mediaUrl || null,
+            mediaType: reply.mediaType || null,
+            sender: {
+              _id: reply.sender._id,
+              username: reply.sender.username,
+              name: reply.sender.name,
+            },
+          }
+        : null,
       read: false,
       createdAt: new Date().toISOString(),
     };
@@ -192,6 +225,7 @@ function ChatPageInner() {
         sendText,
         media?.url,
         media?.type,
+        reply?._id,
       );
       setMessages((prev) => prev.map((m) => (m._id === optimistic._id ? real : m)));
       if (media) URL.revokeObjectURL(media.previewUrl);
@@ -202,9 +236,53 @@ function ChatPageInner() {
       setError(err.response?.data?.message || 'Failed to send');
       setMessages((prev) => prev.filter((m) => m._id !== optimistic._id));
       setText(sendText);
+      if (reply) setReplyingTo(reply);
     } finally {
       setSending(false);
     }
+  };
+
+  const openContextMenu = (e: React.MouseEvent, msg: ChatMessage) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({
+      messageId: msg._id,
+      x: Math.min(e.clientX, window.innerWidth - 180),
+      y: Math.min(e.clientY, window.innerHeight - 200),
+    });
+  };
+
+  const handleDeleteMessage = async (msg: ChatMessage) => {
+    if (!activeConv) return;
+    if (!confirm('Delete this message?')) return;
+    setContextMenu(null);
+    const previous = messages;
+    setMessages((prev) =>
+      prev.map((m) =>
+        m._id === msg._id ? { ...m, text: '', mediaUrl: null, mediaType: null, deletedAt: new Date().toISOString() } : m,
+      ),
+    );
+    try {
+      await deleteMessage(activeConv._id, msg._id);
+    } catch (err: any) {
+      setMessages(previous);
+      setError(err.response?.data?.message || 'Failed to delete');
+    }
+  };
+
+  const handleCopy = async (msg: ChatMessage) => {
+    setContextMenu(null);
+    if (!msg.text) return;
+    try {
+      await navigator.clipboard.writeText(msg.text);
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleReply = (msg: ChatMessage) => {
+    setContextMenu(null);
+    setReplyingTo(msg);
   };
 
   if (authLoading || loading || !user) {
@@ -222,6 +300,11 @@ function ChatPageInner() {
   const convItemClass = (isActive: boolean) =>
     'w-full flex items-start gap-3 p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition text-left border-b border-gray-100 dark:border-gray-800 ' +
     (isActive ? 'bg-blue-50 dark:bg-blue-950/40' : '');
+
+  const menuMsg = contextMenu
+    ? messages.find((m) => m._id === contextMenu.messageId)
+    : null;
+  const isMyMenuMsg = menuMsg?.sender._id === user.userId;
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950">
@@ -318,48 +401,79 @@ function ChatPageInner() {
                   const senderId = msg.sender?._id || '';
                   const isMe = senderId === user.userId;
                   const isOptimistic = msg._id.startsWith('temp-');
+                  const isDeleted = !!msg.deletedAt;
                   return (
                     <div
                       key={msg._id}
                       className={isMe ? 'flex justify-end' : 'flex justify-start'}
                     >
                       <div
+                        onContextMenu={(e) => !isOptimistic && openContextMenu(e, msg)}
                         className={
-                          'max-w-[75%] rounded-2xl overflow-hidden ' +
+                          'max-w-[75%] rounded-2xl overflow-hidden cursor-pointer select-none ' +
                           (isMe
                             ? 'bg-blue-500 text-white rounded-br-sm ' +
                               (isOptimistic ? 'opacity-70' : '')
                             : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-bl-sm')
                         }
                       >
-                        {msg.mediaUrl && (
-                          <div className="max-w-xs">
-                            {msg.mediaType === 'video' ? (
-                              <video
-                                src={getMediaUrl(msg.mediaUrl)}
-                                controls
-                                className="w-full max-h-80 object-cover bg-black"
-                                preload="metadata"
-                              />
-                            ) : (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={getMediaUrl(msg.mediaUrl)}
-                                alt="attachment"
-                                width={320}
-                                height={240}
-                                className="w-full max-h-80 object-cover"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).style.display = 'none';
-                                }}
-                              />
-                            )}
+                        {msg.replyTo && (
+                          <div
+                            className={
+                              'px-3 py-1.5 text-xs border-l-2 mb-1 ' +
+                              (isMe
+                                ? 'border-blue-200 bg-blue-600/30'
+                                : 'border-blue-400 bg-gray-100 dark:bg-gray-700')
+                            }
+                          >
+                            <p className="font-semibold opacity-90">
+                              {msg.replyTo.sender?.name || msg.replyTo.sender?.username || 'Unknown'}
+                            </p>
+                            <p className="truncate opacity-80">
+                              {msg.replyTo.deletedAt
+                                ? 'Deleted message'
+                                : msg.replyTo.mediaUrl && !msg.replyTo.text
+                                ? '📷 Photo'
+                                : msg.replyTo.text}
+                            </p>
                           </div>
                         )}
-                        {msg.text && (
-                          <p className="text-sm whitespace-pre-wrap break-words px-4 py-2">
-                            {msg.text}
+                        {isDeleted ? (
+                          <p className="text-sm italic opacity-60 px-4 py-2">
+                            This message was deleted
                           </p>
+                        ) : (
+                          <>
+                            {msg.mediaUrl && (
+                              <div className="max-w-xs">
+                                {msg.mediaType === 'video' ? (
+                                  <video
+                                    src={getMediaUrl(msg.mediaUrl)}
+                                    controls
+                                    className="w-full max-h-80 object-cover bg-black"
+                                    preload="metadata"
+                                  />
+                                ) : (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img
+                                    src={getMediaUrl(msg.mediaUrl)}
+                                    alt="attachment"
+                                    width={320}
+                                    height={240}
+                                    className="w-full max-h-80 object-cover"
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).style.display = 'none';
+                                    }}
+                                  />
+                                )}
+                              </div>
+                            )}
+                            {msg.text && (
+                              <p className="text-sm whitespace-pre-wrap break-words px-4 py-2">
+                                {msg.text}
+                              </p>
+                            )}
+                          </>
                         )}
                         <p
                           className={
@@ -387,6 +501,28 @@ function ChatPageInner() {
             )}
 
             <div className="border-t border-gray-200 dark:border-gray-800">
+              {replyingTo && (
+                <div className="p-3 pb-0 flex items-start gap-3">
+                  <div className="flex-1 min-w-0 border-l-2 border-blue-500 pl-3">
+                    <p className="text-xs font-semibold text-blue-500">
+                      Replying to {replyingTo.sender.name || replyingTo.sender.username}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                      {replyingTo.mediaUrl && !replyingTo.text
+                        ? '📷 Photo'
+                        : replyingTo.text}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setReplyingTo(null)}
+                    className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+                  >
+                    <XIcon className="w-4 h-4 text-gray-500" />
+                  </button>
+                </div>
+              )}
+
               {pendingMedia && (
                 <div className="p-3 pb-0 flex items-start gap-3">
                   <div className="relative">
@@ -419,10 +555,7 @@ function ChatPageInner() {
                 </div>
               )}
 
-              <form
-                onSubmit={handleSend}
-                className="p-4 flex items-center gap-2"
-              >
+              <form onSubmit={handleSend} className="p-4 flex items-center gap-2">
                 <input
                   ref={fileInputRef}
                   id="chat-file-input"
@@ -483,6 +616,40 @@ function ChatPageInner() {
           </div>
         )}
       </main>
+
+      {contextMenu && menuMsg && (
+        <div
+          className="fixed z-50 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 py-1 min-w-[160px]"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={() => handleReply(menuMsg)}
+            className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm text-gray-800 dark:text-gray-200"
+          >
+            <ReplyIcon className="w-4 h-4" />
+            Reply
+          </button>
+          {menuMsg.text && (
+            <button
+              onClick={() => handleCopy(menuMsg)}
+              className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm text-gray-800 dark:text-gray-200"
+            >
+              <Copy className="w-4 h-4" />
+              Copy
+            </button>
+          )}
+          {isMyMenuMsg && (
+            <button
+              onClick={() => handleDeleteMessage(menuMsg)}
+              className="w-full flex items-center gap-2 px-3 py-2 hover:bg-red-50 dark:hover:bg-red-950/40 text-sm text-red-600 dark:text-red-400"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

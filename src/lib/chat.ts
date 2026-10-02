@@ -8,6 +8,19 @@ export interface ChatUser {
   isVerified?: boolean;
 }
 
+export interface ChatMessageReply {
+  _id: string;
+  text: string;
+  mediaUrl?: string | null;
+  mediaType?: 'image' | 'video' | null;
+  sender: {
+    _id: string;
+    username: string;
+    name?: string;
+  };
+  deletedAt?: string | null;
+}
+
 export interface ChatMessage {
   _id: string;
   conversation: string;
@@ -15,8 +28,10 @@ export interface ChatMessage {
   text: string;
   mediaUrl?: string | null;
   mediaType?: 'image' | 'video' | null;
+  replyTo?: ChatMessageReply | null;
   read: boolean;
   createdAt: string;
+  deletedAt?: string | null;
 }
 
 export interface Conversation {
@@ -31,7 +46,7 @@ export interface Conversation {
     mediaType?: 'image' | 'video' | null;
     createdAt: string;
     read: boolean;
-  };
+  } | null;
   lastMessageAt: string;
   unreadCount: number;
 }
@@ -80,10 +95,11 @@ export async function sendMessage(
   text: string,
   mediaUrl?: string,
   mediaType?: 'image' | 'video',
+  replyTo?: string,
 ): Promise<ChatMessage> {
   const res = await api.post(
     '/chat/conversations/' + conversationId + '/messages',
-    { text, mediaUrl, mediaType },
+    { text, mediaUrl, mediaType, replyTo },
     { timeout: 30000 },
   );
   return res.data;
@@ -102,6 +118,16 @@ export async function uploadChatMedia(
       headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 60000,
     },
+  );
+  return res.data;
+}
+
+export async function deleteMessage(
+  conversationId: string,
+  messageId: string,
+): Promise<{ deleted: boolean }> {
+  const res = await api.delete(
+    '/chat/conversations/' + conversationId + '/messages/' + messageId,
   );
   return res.data;
 }
