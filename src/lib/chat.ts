@@ -30,6 +30,7 @@ export interface ChatMessage {
   mediaType?: 'image' | 'video' | null;
   replyTo?: ChatMessageReply | null;
   read: boolean;
+  deliveredAt?: string | null;
   createdAt: string;
   deletedAt?: string | null;
 }

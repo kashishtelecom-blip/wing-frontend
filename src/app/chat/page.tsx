@@ -6,6 +6,7 @@ import Link from 'next/link';
 import {
   ArrowLeft, Send, MessageCircle, Loader2, Image as ImageIcon, X as XIcon,
   Copy, Trash2, Reply as ReplyIcon,
+  Clock, Check, CheckCheck,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { NavBar } from '@/components/NavBar';
@@ -18,6 +19,24 @@ import {
   getMessages, sendMessage, markConversationRead,
   uploadChatMedia, deleteMessage,
 } from '@/lib/chat';
+
+function MessageTicks({
+  isOptimistic,
+  read,
+  delivered,
+  isMe,
+}: {
+  isOptimistic: boolean;
+  read: boolean;
+  delivered: boolean;
+  isMe: boolean;
+}) {
+  if (!isMe) return null;
+  if (isOptimistic) return <Clock className="w-3 h-3 opacity-60" />;
+  if (read) return <CheckCheck className="w-3.5 h-3.5 text-green-300" />;
+  if (delivered) return <CheckCheck className="w-3.5 h-3.5 opacity-60" />;
+  return <Check className="w-3.5 h-3.5 opacity-60" />;
+}
 
 function ChatPageInner() {
   const { user, loading: authLoading } = useAuth();
@@ -684,7 +703,7 @@ function ChatPageInner() {
   );
 }
 
-export default function ChatPage() {
+  export default function ChatPage() {
   return (
     <Suspense
       fallback={
