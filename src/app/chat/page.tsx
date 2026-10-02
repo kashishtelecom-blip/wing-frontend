@@ -404,9 +404,39 @@ function ChatPageInner() {
                   const isDeleted = !!msg.deletedAt;
                   return (
                     <div
-                      key={msg._id}
-                      className={isMe ? 'flex justify-end' : 'flex justify-start'}
-                    >
+  key={msg._id}
+  className={
+    'group relative flex items-center gap-1 ' +
+    (isMe ? 'justify-end' : 'justify-start')
+  }
+>
+{!isOptimistic && (
+  <button
+    type="button"
+    onClick={(e) => {
+      e.stopPropagation();
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      setContextMenu({
+        messageId: msg._id,
+        x: Math.min(rect.left, window.innerWidth - 180),
+        y: Math.min(rect.bottom + 4, window.innerHeight - 200),
+      });
+    }}
+    className={
+      'opacity-0 group-hover:opacity-100 transition-opacity ' +
+      'p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 ' +
+      'text-gray-500 dark:text-gray-400 flex-shrink-0 ' +
+      (isMe ? 'order-first' : 'order-last')
+    }
+    title="More options"
+  >
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+      <circle cx="5" cy="12" r="2" />
+      <circle cx="12" cy="12" r="2" />
+      <circle cx="19" cy="12" r="2" />
+    </svg>
+  </button>
+)}
                       <div
                         onContextMenu={(e) => !isOptimistic && openContextMenu(e, msg)}
                         className={
