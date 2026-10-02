@@ -524,24 +524,25 @@ function ChatPageInner() {
                             )}
                           </>
                         )}
-                        <p
-                          className={
-                            'text-[10px] pb-2 px-4 ' +
-                            (isMe ? 'text-blue-100' : 'text-gray-400')
-                          }
-                        >
-                          {new Date(msg.createdAt).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-              <div ref={messagesEndRef} />
-            </div>
+                        <div
+  className={
+    'text-[10px] pb-2 px-4 flex items-center gap-1 ' +
+    (isMe ? 'text-blue-100 justify-end' : 'text-gray-400')
+  }
+>
+  <span>
+    {new Date(msg.createdAt).toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    })}
+  </span>
+  <MessageTicks
+    isOptimistic={isOptimistic}
+    read={msg.read}
+    delivered={!!msg.deliveredAt}
+    isMe={isMe}
+  />
+</div>
 
             {error && (
               <div className="px-4 py-2 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 text-xs">
