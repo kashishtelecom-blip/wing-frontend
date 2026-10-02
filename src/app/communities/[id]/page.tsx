@@ -5,17 +5,31 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft, Globe, Lock, Users, Loader2, Trash2, UserPlus, X, MessageCircle, Send,
+  Image as ImageIcon, Copy, Reply as ReplyIcon, Clock, Check, CheckCheck,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { NavBar } from '@/components/NavBar';
 import { Avatar } from '@/components/Avatar';
 import { VerifiedBadge } from '@/components/VerifiedBadge';
+import { getMediaUrl } from '@/lib/media';
 import api from '@/lib/api';
 import {
-  Community, getCommunity, joinCommunity, leaveCommunity, deleteCommunity,
+  Community, CommunityMessage,
+  getCommunity, joinCommunity, leaveCommunity, deleteCommunity,
   addMembers, removeMember,
-  CommunityMessage, getCommunityMessages, sendCommunityMessage,
+  getCommunityMessages, sendCommunityMessage,
+  uploadCommunityMedia, deleteCommunityMessage,
 } from '@/lib/communities';
+
+function MessageTicks({
+  isOptimistic, read, delivered, isMe,
+}: { isOptimistic: boolean; read: boolean; delivered: boolean; isMe: boolean }) {
+  if (!isMe) return null;
+  if (isOptimistic) return <Clock className="w-3 h-3 opacity-60" />;
+  if (read) return <CheckCheck className="w-3.5 h-3.5 text-green-300" />;
+  if (delivered) return <CheckCheck className="w-3.5 h-3.5 opacity-60" />;
+  return <Check className="w-3.5 h-3.5 opacity-60" />;
+}
 
 export default function CommunityDetailPage() {
   const params = useParams();
@@ -26,18 +40,34 @@ export default function CommunityDetailPage() {
   const [working, setWorking] = useState(false);
   const [error, setError] = useState('');
 
+  // Invite dialog
   const [showInvite, setShowInvite] = useState(false);
   const [candidates, setCandidates] = useState<any[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [inviting, setInviting] = useState(false);
 
+  // Chat
   const [showChat, setShowChat] = useState(false);
   const [messages, setMessages] = useState<CommunityMessage[]>([]);
   const [chatText, setChatText] = useState('');
   const [sendingChat, setSendingChat] = useState(false);
+  const [pendingMedia, setPendingMedia] = useState<{
+    url: string;
+    type: 'image' | 'video';
+    previewUrl: string;
+  } | null>(null);
+  const [uploadingChat, setUploadingChat] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<CommunityMessage | null>(null);
+  const [contextMenu, setContextMenu] = useState<{
+    messageId: string;
+    x: number;
+    y: number;
+  } | null>(null);
+
   const chatEndRef = useRef<HTMLDivElement>(null);
   const chatPollRef = useRef<NodeJS.Timeout | null>(null);
+  const chatFileInputRef = useRef<HTMLInputElement>(null);
 
   const communityId = params.id as string;
 
@@ -199,11 +229,26 @@ export default function CommunityDetailPage() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, showChat]);
 
+  useEffect(() => {
+    if (!contextMenu) return;
+    const close = () => setContextMenu(null);
+    document.addEventListener('click', close);
+    document.addEventListener('scroll', close, true);
+    return () => {
+      document.removeEventListener('click', close);
+      document.removeEventListener('scroll', close, true);
+    };
+  }, [contextMenu]);
+
   const handleSendChat = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!community || !chatText.trim() || sendingChat) return;
+    if ((!chatText.trim() && !pendingMedia) || !community || sendingChat) return;
     const sendText = chatText.trim();
+    const media = pendingMedia;
+    const reply = replyingTo;
     setChatText('');
+    setPendingMedia(null);
+    setReplyingTo(null);
     setSendingChat(true);
 
     const optimistic: CommunityMessage = {
@@ -211,19 +256,92 @@ export default function CommunityDetailPage() {
       community: community._id,
       sender: { _id: user!.userId, username: user!.username },
       text: sendText,
+      mediaUrl: media?.url || null,
+      mediaType: media?.type || null,
+      replyTo: reply
+        ? {
+            _id: reply._id,
+            text: reply.text,
+            mediaUrl: reply.mediaUrl || null,
+            mediaType: reply.mediaType || null,
+            sender: {
+              _id: reply.sender._id,
+              username: reply.sender.username,
+              name: reply.sender.name,
+            },
+          }
+        : null,
+      read: false,
       createdAt: new Date().toISOString(),
     };
     setMessages((prev) => [...prev, optimistic]);
 
     try {
-      const real = await sendCommunityMessage(community._id, sendText);
+      const real = await sendCommunityMessage(
+        community._id,
+        sendText,
+        media?.url,
+        media?.type,
+        reply?._id,
+      );
       setMessages((prev) => prev.map((m) => (m._id === optimistic._id ? real : m)));
+      if (media) URL.revokeObjectURL(media.previewUrl);
     } catch (err: any) {
       alert(err.response?.data?.message || 'Failed to send');
       setMessages((prev) => prev.filter((m) => m._id !== optimistic._id));
       setChatText(sendText);
+      if (reply) setReplyingTo(reply);
     } finally {
       setSendingChat(false);
+    }
+  };
+
+  const handleChatFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !community) return;
+    if (!/\.(jpg|jpeg|png|gif|webp|mp4|webm|mov|m4v)$/i.test(file.name)) {
+      alert('Only images or videos allowed');
+      return;
+    }
+    if (file.size > 50 * 1024 * 1024) {
+      alert('File too large (max 50MB)');
+      return;
+    }
+    setUploadingChat(true);
+    try {
+      const previewUrl = URL.createObjectURL(file);
+      const res = await uploadCommunityMedia(community._id, file);
+      setPendingMedia({ url: res.url, type: res.type, previewUrl });
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Upload failed');
+    } finally {
+      setUploadingChat(false);
+      if (chatFileInputRef.current) chatFileInputRef.current.value = '';
+    }
+  };
+
+  const clearPendingMedia = () => {
+    if (pendingMedia) URL.revokeObjectURL(pendingMedia.previewUrl);
+    setPendingMedia(null);
+  };
+
+  const handleChatDelete = async (msg: CommunityMessage) => {
+    if (!community) return;
+    if (!confirm('Delete this message?')) return;
+    setContextMenu(null);
+    const previous = messages;
+    setMessages((prev) =>
+      prev.map((m) =>
+        m._id === msg._id
+          ? { ...m, text: '', mediaUrl: null, mediaType: null, deletedAt: new Date().toISOString() }
+          : m,
+      ),
+    );
+    try {
+      await deleteCommunityMessage(community._id, msg._id);
+    } catch (err: any) {
+      setMessages(previous);
+      alert(err.response?.data?.message || 'Failed to delete');
     }
   };
 
@@ -489,6 +607,8 @@ export default function CommunityDetailPage() {
 
             <div className="p-3 border-b border-gray-200 dark:border-gray-800">
               <input
+                id="invite-search"
+                name="search"
                 type="text"
                 placeholder="Search people..."
                 value={searchQuery}
@@ -606,14 +726,44 @@ export default function CommunityDetailPage() {
                   const senderId = msg.sender?._id || '';
                   const isMe = senderId === user?.userId;
                   const isOptimistic = msg._id.startsWith('temp-');
+                  const isDeleted = !!msg.deletedAt;
                   const senderName = isMe
                     ? 'You'
                     : msg.sender?.name || msg.sender?.username || 'Unknown';
                   return (
                     <div
                       key={msg._id}
-                      className={isMe ? 'flex justify-end' : 'flex justify-start'}
+                      className={
+                        'group relative flex items-center gap-1 ' +
+                        (isMe ? 'justify-end' : 'justify-start')
+                      }
                     >
+                      {!isOptimistic && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                            setContextMenu({
+                              messageId: msg._id,
+                              x: Math.min(rect.left, window.innerWidth - 180),
+                              y: Math.min(rect.bottom + 4, window.innerHeight - 200),
+                            });
+                          }}
+                          className={
+                            'opacity-0 group-hover:opacity-100 transition-opacity ' +
+                            'p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 ' +
+                            'text-gray-500 dark:text-gray-400 flex-shrink-0 ' +
+                            (isMe ? 'order-first' : 'order-last')
+                          }
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="5" cy="12" r="2" />
+                            <circle cx="12" cy="12" r="2" />
+                            <circle cx="19" cy="12" r="2" />
+                          </svg>
+                        </button>
+                      )}
                       <div className="flex items-end gap-2 max-w-[80%]">
                         {!isMe && (
                           <Link href={'/profile/' + senderId} className="flex-shrink-0">
@@ -633,28 +783,91 @@ export default function CommunityDetailPage() {
                           </p>
                           <div
                             className={
-                              'rounded-2xl px-3.5 py-2 ' +
+                              'rounded-2xl overflow-hidden ' +
                               (isMe
                                 ? 'bg-blue-500 text-white rounded-br-sm ' +
                                   (isOptimistic ? 'opacity-70' : '')
                                 : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-bl-sm')
                             }
                           >
-                            <p className="text-sm whitespace-pre-wrap break-words">
-                              {msg.text}
-                            </p>
+                            {msg.replyTo && (
+                              <div
+                                className={
+                                  'px-3 py-1.5 text-xs border-l-2 ' +
+                                  (isMe
+                                    ? 'border-blue-200 bg-blue-600/30'
+                                    : 'border-blue-400 bg-gray-100 dark:bg-gray-700')
+                                }
+                              >
+                                <p className="font-semibold opacity-90">
+                                  {msg.replyTo.sender?.name || msg.replyTo.sender?.username || 'Unknown'}
+                                </p>
+                                <p className="truncate opacity-80">
+                                  {msg.replyTo.deletedAt
+                                    ? 'Deleted message'
+                                    : msg.replyTo.mediaUrl && !msg.replyTo.text
+                                    ? '📷 Photo'
+                                    : msg.replyTo.text}
+                                </p>
+                              </div>
+                            )}
+                            {isDeleted ? (
+                              <p className="text-sm italic opacity-60 px-3.5 py-2">
+                                This message was deleted
+                              </p>
+                            ) : (
+                              <>
+                                {msg.mediaUrl && (
+                                  <div className="max-w-xs">
+                                    {msg.mediaType === 'video' ? (
+                                      <video
+                                        src={getMediaUrl(msg.mediaUrl)}
+                                        controls
+                                        className="w-full max-h-80 bg-black"
+                                        preload="metadata"
+                                      />
+                                    ) : (
+                                      // eslint-disable-next-line @next/next/no-img-element
+                                      <img
+                                        src={getMediaUrl(msg.mediaUrl)}
+                                        alt="attachment"
+                                        width={320}
+                                        height={240}
+                                        className="w-full max-h-80 object-cover"
+                                        onError={(e) => {
+                                          (e.target as HTMLImageElement).style.display = 'none';
+                                        }}
+                                      />
+                                    )}
+                                  </div>
+                                )}
+                                {msg.text && (
+                                  <p className="text-sm whitespace-pre-wrap break-words px-3.5 py-2">
+                                    {msg.text}
+                                  </p>
+                                )}
+                              </>
+                            )}
+                            <div
+                              className={
+                                'text-[10px] pb-1.5 px-3.5 flex items-center gap-1 ' +
+                                (isMe ? 'text-blue-100 justify-end' : 'text-gray-400')
+                              }
+                            >
+                              <span>
+                                {new Date(msg.createdAt).toLocaleTimeString([], {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                              </span>
+                              <MessageTicks
+                                isOptimistic={isOptimistic}
+                                read={msg.read}
+                                delivered={!!msg.deliveredAt}
+                                isMe={isMe}
+                              />
+                            </div>
                           </div>
-                          <p
-                            className={
-                              'text-[10px] mt-0.5 px-1 ' +
-                              (isMe ? 'text-right text-gray-400' : 'text-gray-400')
-                            }
-                          >
-                            {new Date(msg.createdAt).toLocaleTimeString([], {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </p>
                         </div>
                       </div>
                     </div>
@@ -664,34 +877,147 @@ export default function CommunityDetailPage() {
               <div ref={chatEndRef} />
             </div>
 
-            <form
-              onSubmit={handleSendChat}
-              className="p-3 border-t border-gray-200 dark:border-gray-800 flex items-center gap-2"
-            >
-              <input
-                type="text"
-                value={chatText}
-                onChange={(e) => setChatText(e.target.value)}
-                placeholder="Message the group..."
-                maxLength={1000}
-                className="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-gray-800 dark:text-white rounded-full outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                disabled={sendingChat}
-              />
-              <button
-                type="submit"
-                disabled={!chatText.trim() || sendingChat}
-                className="bg-blue-500 hover:bg-blue-600 text-white p-2.5 rounded-full transition disabled:opacity-50"
+            <div className="border-t border-gray-200 dark:border-gray-800">
+              {replyingTo && (
+                <div className="p-3 pb-0 flex items-start gap-3">
+                  <div className="flex-1 min-w-0 border-l-2 border-blue-500 pl-3">
+                    <p className="text-xs font-semibold text-blue-500">
+                      Replying to {replyingTo.sender.name || replyingTo.sender.username}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                      {replyingTo.mediaUrl && !replyingTo.text
+                        ? '📷 Photo'
+                        : replyingTo.text}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setReplyingTo(null)}
+                    className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+                  >
+                    <X className="w-4 h-4 text-gray-500" />
+                  </button>
+                </div>
+              )}
+
+              {pendingMedia && (
+                <div className="p-3 pb-0 flex items-start gap-3">
+                  <div className="relative">
+                    {pendingMedia.type === 'video' ? (
+                      <video
+                        src={pendingMedia.previewUrl}
+                        className="w-24 h-24 object-cover rounded-lg bg-black"
+                      />
+                    ) : (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={pendingMedia.previewUrl}
+                        alt="preview"
+                        width={96}
+                        height={96}
+                        className="w-24 h-24 object-cover rounded-lg"
+                      />
+                    )}
+                    <button
+                      type="button"
+                      onClick={clearPendingMedia}
+                      className="absolute -top-1.5 -right-1.5 bg-gray-900 text-white rounded-full p-0.5"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <form
+                onSubmit={handleSendChat}
+                className="p-3 flex items-center gap-2"
               >
-                {sendingChat ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Send className="w-4 h-4" />
-                )}
-              </button>
-            </form>
+                <input
+                  ref={chatFileInputRef}
+                  id="community-chat-file"
+                  name="file"
+                  type="file"
+                  accept="image/*,video/*"
+                  onChange={handleChatFileChange}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => chatFileInputRef.current?.click()}
+                  disabled={uploadingChat || sendingChat}
+                  className="p-2.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 disabled:opacity-50"
+                  title="Attach image or video"
+                >
+                  {uploadingChat ? (
+                    <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
+                  ) : (
+                    <ImageIcon className="w-5 h-5" />
+                  )}
+                </button>
+                <input
+                  id="community-chat-input"
+                  name="message"
+                  type="text"
+                  value={chatText}
+                  onChange={(e) => setChatText(e.target.value)}
+                  placeholder="Message the group..."
+                  maxLength={2000}
+                  className="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-gray-800 dark:text-white rounded-full outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  disabled={sendingChat}
+                />
+                <button
+                  type="submit"
+                  disabled={(!chatText.trim() && !pendingMedia) || sendingChat || uploadingChat}
+                  className="bg-blue-500 hover:bg-blue-600 text-white p-2.5 rounded-full transition disabled:opacity-50"
+                >
+                  {sendingChat ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       )}
+
+      {contextMenu && (() => {
+        const menuMsg = messages.find((m) => m._id === contextMenu.messageId);
+        if (!menuMsg) return null;
+        const isMyMenuMsg = menuMsg.sender._id === user?.userId;
+        return (
+          <div
+            className="fixed z-[60] bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 py-1 min-w-[160px]"
+            style={{ left: contextMenu.x, top: contextMenu.y }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => { setReplyingTo(menuMsg); setContextMenu(null); }}
+              className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm text-gray-800 dark:text-gray-200"
+            >
+              <ReplyIcon className="w-4 h-4" /> Reply
+            </button>
+            {menuMsg.text && (
+              <button
+                onClick={() => { navigator.clipboard.writeText(menuMsg.text); setContextMenu(null); }}
+                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm text-gray-800 dark:text-gray-200"
+              >
+                <Copy className="w-4 h-4" /> Copy
+              </button>
+            )}
+            {isMyMenuMsg && (
+              <button
+                onClick={() => handleChatDelete(menuMsg)}
+                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-red-50 dark:hover:bg-red-950/40 text-sm text-red-600 dark:text-red-400"
+              >
+                <Trash2 className="w-4 h-4" /> Delete
+              </button>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 }

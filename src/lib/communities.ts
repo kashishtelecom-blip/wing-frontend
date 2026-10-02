@@ -14,7 +14,7 @@ export interface Community {
   description?: string;
   emoji?: string;
   creator: CommunityUser;
-  members: string[];
+  members: any[];
   isPublic: boolean;
   tags: string[];
   membersCount: number;
@@ -27,7 +27,20 @@ export interface CommunityMessage {
   community: string;
   sender: CommunityUser;
   text: string;
+  mediaUrl?: string | null;
+  mediaType?: 'image' | 'video' | null;
+  replyTo?: {
+    _id: string;
+    text: string;
+    mediaUrl?: string | null;
+    mediaType?: 'image' | 'video' | null;
+    sender: { _id: string; username: string; name?: string };
+    deletedAt?: string | null;
+  } | null;
+  read: boolean;
+  deliveredAt?: string | null;
   createdAt: string;
+  deletedAt?: string | null;
 }
 
 export async function getCommunities(q?: string): Promise<Community[]> {
@@ -86,7 +99,39 @@ export async function getCommunityMessages(id: string): Promise<CommunityMessage
   return res.data || [];
 }
 
-export async function sendCommunityMessage(id: string, text: string): Promise<CommunityMessage> {
-  const res = await api.post(`/communities/${id}/messages`, { text });
+export async function sendCommunityMessage(
+  id: string,
+  text: string,
+  mediaUrl?: string,
+  mediaType?: 'image' | 'video',
+  replyTo?: string,
+): Promise<CommunityMessage> {
+  const res = await api.post(`/communities/${id}/messages`, {
+    text,
+    mediaUrl,
+    mediaType,
+    replyTo,
+  });
+  return res.data;
+}
+
+export async function uploadCommunityMedia(
+  id: string,
+  file: File,
+): Promise<{ url: string; type: 'image' | 'video' }> {
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await api.post(`/communities/${id}/upload`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 60000,
+  });
+  return res.data;
+}
+
+export async function deleteCommunityMessage(
+  communityId: string,
+  messageId: string,
+): Promise<{ deleted: boolean }> {
+  const res = await api.delete(`/communities/${communityId}/messages/${messageId}`);
   return res.data;
 }
