@@ -77,25 +77,21 @@ function ChatPageInner() {
   useEffect(() => {
     if (authLoading || !user) return;
     let cancelled = false;
-
     (async () => {
       try {
         const convs = await getConversations();
         if (cancelled) return;
         setConversations(convs);
-
         if (targetUserId) {
           const existing = convs.find((c) => c.other?._id === targetUserId);
-          if (existing) {
-            setActiveConv(existing);
-          } else {
+          if (existing) setActiveConv(existing);
+          else {
             const conv = await startConversation(targetUserId);
             if (!cancelled && conv && conv.other) {
               setActiveConv(conv);
-              setConversations((prev) => {
-                const has = prev.some((c) => c._id === conv._id);
-                return has ? prev : [conv, ...prev];
-              });
+              setConversations((prev) =>
+                prev.some((c) => c._id === conv._id) ? prev : [conv, ...prev],
+              );
             }
           }
         } else if (convs.length > 0) {
@@ -107,7 +103,6 @@ function ChatPageInner() {
         if (!cancelled) setLoading(false);
       }
     })();
-
     return () => {
       cancelled = true;
     };
@@ -141,10 +136,8 @@ function ChatPageInner() {
     activeConvIdRef.current = activeConv._id;
     setMessages([]);
     loadMessages(false);
-
     if (pollRef.current) clearInterval(pollRef.current);
     pollRef.current = setInterval(() => loadMessages(true), 5000);
-
     return () => {
       if (pollRef.current) {
         clearInterval(pollRef.current);
@@ -157,7 +150,6 @@ function ChatPageInner() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
   }, [messages]);
 
-  // Close context menu on any click elsewhere
   useEffect(() => {
     if (!contextMenu) return;
     const close = () => setContextMenu(null);
@@ -278,7 +270,15 @@ function ChatPageInner() {
     const previous = messages;
     setMessages((prev) =>
       prev.map((m) =>
-        m._id === msg._id ? { ...m, text: '', mediaUrl: null, mediaType: null, deletedAt: new Date().toISOString() } : m,
+        m._id === msg._id
+          ? {
+              ...m,
+              text: '',
+              mediaUrl: null,
+              mediaType: null,
+              deletedAt: new Date().toISOString(),
+            }
+          : m,
       ),
     );
     try {
@@ -423,39 +423,39 @@ function ChatPageInner() {
                   const isDeleted = !!msg.deletedAt;
                   return (
                     <div
-  key={msg._id}
-  className={
-    'group relative flex items-center gap-1 ' +
-    (isMe ? 'justify-end' : 'justify-start')
-  }
->
-{!isOptimistic && (
-  <button
-    type="button"
-    onClick={(e) => {
-      e.stopPropagation();
-      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-      setContextMenu({
-        messageId: msg._id,
-        x: Math.min(rect.left, window.innerWidth - 180),
-        y: Math.min(rect.bottom + 4, window.innerHeight - 200),
-      });
-    }}
-    className={
-      'opacity-0 group-hover:opacity-100 transition-opacity ' +
-      'p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 ' +
-      'text-gray-500 dark:text-gray-400 flex-shrink-0 ' +
-      (isMe ? 'order-first' : 'order-last')
-    }
-    title="More options"
-  >
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-      <circle cx="5" cy="12" r="2" />
-      <circle cx="12" cy="12" r="2" />
-      <circle cx="19" cy="12" r="2" />
-    </svg>
-  </button>
-)}
+                      key={msg._id}
+                      className={
+                        'group relative flex items-center gap-1 ' +
+                        (isMe ? 'justify-end' : 'justify-start')
+                      }
+                    >
+                      {!isOptimistic && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                            setContextMenu({
+                              messageId: msg._id,
+                              x: Math.min(rect.left, window.innerWidth - 180),
+                              y: Math.min(rect.bottom + 4, window.innerHeight - 200),
+                            });
+                          }}
+                          className={
+                            'opacity-0 group-hover:opacity-100 transition-opacity ' +
+                            'p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 ' +
+                            'text-gray-500 dark:text-gray-400 flex-shrink-0 ' +
+                            (isMe ? 'order-first' : 'order-last')
+                          }
+                          title="More options"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="5" cy="12" r="2" />
+                            <circle cx="12" cy="12" r="2" />
+                            <circle cx="19" cy="12" r="2" />
+                          </svg>
+                        </button>
+                      )}
                       <div
                         onContextMenu={(e) => !isOptimistic && openContextMenu(e, msg)}
                         className={
@@ -525,24 +525,31 @@ function ChatPageInner() {
                           </>
                         )}
                         <div
-  className={
-    'text-[10px] pb-2 px-4 flex items-center gap-1 ' +
-    (isMe ? 'text-blue-100 justify-end' : 'text-gray-400')
-  }
->
-  <span>
-    {new Date(msg.createdAt).toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit',
-    })}
-  </span>
-  <MessageTicks
-    isOptimistic={isOptimistic}
-    read={msg.read}
-    delivered={!!msg.deliveredAt}
-    isMe={isMe}
-  />
-</div>
+                          className={
+                            'text-[10px] pb-2 px-4 flex items-center gap-1 ' +
+                            (isMe ? 'text-blue-100 justify-end' : 'text-gray-400')
+                          }
+                        >
+                          <span>
+                            {new Date(msg.createdAt).toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </span>
+                          <MessageTicks
+                            isOptimistic={isOptimistic}
+                            read={msg.read}
+                            delivered={!!msg.deliveredAt}
+                            isMe={isMe}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+              <div ref={messagesEndRef} />
+            </div>
 
             {error && (
               <div className="px-4 py-2 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 text-xs">
@@ -704,7 +711,7 @@ function ChatPageInner() {
   );
 }
 
-  export default function ChatPage() {
+export default function ChatPage() {
   return (
     <Suspense
       fallback={
