@@ -3,15 +3,19 @@
 import { useEffect, useState, useRef, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Send, MessageCircle, Loader2 } from 'lucide-react';
+import {
+  ArrowLeft, Send, MessageCircle, Loader2, Image as ImageIcon, X as XIcon,
+} from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { NavBar } from '@/components/NavBar';
 import { Avatar } from '@/components/Avatar';
 import { VerifiedBadge } from '@/components/VerifiedBadge';
+import { getMediaUrl } from '@/lib/media';
 import {
   Conversation, ChatMessage,
   getConversations, startConversation,
   getMessages, sendMessage, markConversationRead,
+  uploadChatMedia,
 } from '@/lib/chat';
 
 function ChatPageInner() {
@@ -28,16 +32,21 @@ function ChatPageInner() {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
+  const [pendingMedia, setPendingMedia] = useState<{
+    url: string;
+    type: 'image' | 'video';
+    previewUrl: string;
+  } | null>(null);
+  const [uploading, setUploading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
   const activeConvIdRef = useRef<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Redirect to login if not authed
   useEffect(() => {
     if (!authLoading && !user) router.push('/login');
   }, [user, authLoading, router]);
 
-  // Initial load: fetch conversations + handle ?user= param
   useEffect(() => {
     if (authLoading || !user) return;
     let cancelled = false;
@@ -48,7 +57,6 @@ function ChatPageInner() {
         if (cancelled) return;
         setConversations(convs);
 
-        // If ?user=X was provided, open/create that conversation
         if (targetUserId) {
           const existing = convs.find((c) => c.other?._id === targetUserId);
           if (existing) {
@@ -78,14 +86,13 @@ function ChatPageInner() {
     };
   }, [authLoading, user, targetUserId]);
 
-  // Load messages for active conversation
   const loadMessages = useCallback(async (silent = false) => {
     const convId = activeConvIdRef.current;
     if (!convId) return;
     if (!silent) setLoadingMessages(true);
     try {
       const msgs = await getMessages(convId);
-      if (activeConvIdRef.current !== convId) return; // user switched conversations
+      if (activeConvIdRef.current !== convId) return;
       setMessages(msgs);
       await markConversationRead(convId);
       setConversations((prev) =>
@@ -98,7 +105,6 @@ function ChatPageInner() {
     }
   }, []);
 
-  // When active conversation changes, load messages + start polling
   useEffect(() => {
     if (!activeConv) {
       activeConvIdRef.current = null;
@@ -120,41 +126,82 @@ function ChatPageInner() {
     };
   }, [activeConv, loadMessages]);
 
-  // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
   }, [messages]);
 
+  const handleAttach = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !activeConv) return;
+    if (!/\.(jpg|jpeg|png|gif|webp|mp4|webm|mov|m4v)$/i.test(file.name)) {
+      setError('Only images or videos allowed');
+      return;
+    }
+    if (file.size > 50 * 1024 * 1024) {
+      setError('File too large (max 50MB)');
+      return;
+    }
+    setUploading(true);
+    setError('');
+    try {
+      const previewUrl = URL.createObjectURL(file);
+      const res = await uploadChatMedia(activeConv._id, file);
+      setPendingMedia({ url: res.url, type: res.type, previewUrl });
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Upload failed');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const clearPendingMedia = () => {
+    if (pendingMedia) URL.revokeObjectURL(pendingMedia.previewUrl);
+    setPendingMedia(null);
+  };
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!text.trim() || !activeConv || sending) return;
+    if ((!text.trim() && !pendingMedia) || !activeConv || sending) return;
     const sendText = text.trim();
+    const media = pendingMedia;
     setText('');
+    setPendingMedia(null);
     setSending(true);
     setError('');
 
-    // Optimistic message
     const optimistic: ChatMessage = {
       _id: 'temp-' + Date.now(),
       conversation: activeConv._id,
       sender: { _id: user!.userId, username: user!.username },
       text: sendText,
+      mediaUrl: media?.url || null,
+      mediaType: media?.type || null,
       read: false,
       createdAt: new Date().toISOString(),
     };
     setMessages((prev) => [...prev, optimistic]);
 
     try {
-      const real = await sendMessage(activeConv._id, sendText);
+      const real = await sendMessage(
+        activeConv._id,
+        sendText,
+        media?.url,
+        media?.type,
+      );
       setMessages((prev) => prev.map((m) => (m._id === optimistic._id ? real : m)));
-      // Refresh conversation list so last message updates
+      if (media) URL.revokeObjectURL(media.previewUrl);
       const convs = await getConversations();
       setConversations(convs);
     } catch (err: any) {
       console.error('Send failed', err);
       setError(err.response?.data?.message || 'Failed to send');
       setMessages((prev) => prev.filter((m) => m._id !== optimistic._id));
-      setText(sendText); // restore text so user can retry
+      setText(sendText);
     } finally {
       setSending(false);
     }
@@ -179,8 +226,7 @@ function ChatPageInner() {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950">
       <NavBar />
-           <main className="max-w-4xl mx-auto flex w-full" style={{ height: 'calc(100vh - 60px)' }}>
-        {/* Sidebar: conversation list */}
+      <main className="max-w-4xl mx-auto flex w-full" style={{ height: 'calc(100vh - 60px)' }}>
         <div className={sidebarClass}>
           <div className="p-4 border-b border-gray-200 dark:border-gray-800">
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">Messages</h1>
@@ -188,7 +234,9 @@ function ChatPageInner() {
           <div className="flex-1 overflow-y-auto">
             {conversations.length === 0 ? (
               <div className="p-8 text-center text-gray-500 dark:text-gray-400 text-sm">
-                No conversations yet.<br />Open a profile and click Message to start one.
+                No conversations yet.
+                <br />
+                Open a profile and click Message to start one.
               </div>
             ) : (
               conversations.map((conv) => (
@@ -207,7 +255,9 @@ function ChatPageInner() {
                     </div>
                     {conv.lastMessage ? (
                       <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
-                        {conv.lastMessage.text}
+                        {conv.lastMessage.mediaUrl && !conv.lastMessage.text
+                          ? '📷 Photo'
+                          : conv.lastMessage.text}
                       </p>
                     ) : (
                       <p className="text-xs text-gray-400 dark:text-gray-500 italic mt-0.5">
@@ -226,7 +276,6 @@ function ChatPageInner() {
           </div>
         </div>
 
-        {/* Main: thread view */}
         {activeConv ? (
           <div className="flex-1 flex flex-col min-w-0">
             <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex items-center gap-3">
@@ -276,14 +325,48 @@ function ChatPageInner() {
                     >
                       <div
                         className={
-                          'max-w-[75%] rounded-2xl px-4 py-2 ' +
+                          'max-w-[75%] rounded-2xl overflow-hidden ' +
                           (isMe
-                            ? 'bg-blue-500 text-white rounded-br-sm ' + (isOptimistic ? 'opacity-70' : '')
+                            ? 'bg-blue-500 text-white rounded-br-sm ' +
+                              (isOptimistic ? 'opacity-70' : '')
                             : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-bl-sm')
                         }
                       >
-                        <p className="text-sm whitespace-pre-wrap break-words">{msg.text}</p>
-                        <p className={'text-[10px] mt-1 ' + (isMe ? 'text-blue-100' : 'text-gray-400')}>
+                        {msg.mediaUrl && (
+                          <div className="max-w-xs">
+                            {msg.mediaType === 'video' ? (
+                              <video
+                                src={getMediaUrl(msg.mediaUrl)}
+                                controls
+                                className="w-full max-h-80 object-cover bg-black"
+                                preload="metadata"
+                              />
+                            ) : (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={getMediaUrl(msg.mediaUrl)}
+                                alt="attachment"
+                                width={320}
+                                height={240}
+                                className="w-full max-h-80 object-cover"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = 'none';
+                                }}
+                              />
+                            )}
+                          </div>
+                        )}
+                        {msg.text && (
+                          <p className="text-sm whitespace-pre-wrap break-words px-4 py-2">
+                            {msg.text}
+                          </p>
+                        )}
+                        <p
+                          className={
+                            'text-[10px] pb-2 px-4 ' +
+                            (isMe ? 'text-blue-100' : 'text-gray-400')
+                          }
+                        >
                           {new Date(msg.createdAt).toLocaleTimeString([], {
                             hour: '2-digit',
                             minute: '2-digit',
@@ -303,42 +386,96 @@ function ChatPageInner() {
               </div>
             )}
 
-            <form
-              onSubmit={handleSend}
-              className="p-4 border-t border-gray-200 dark:border-gray-800 flex items-center gap-2"
-            >
-              <input
-                type="text"
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                placeholder="Start a new message"
-                className="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-gray-800 dark:text-white rounded-full outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                disabled={sending}
-              />
-               <input
-  id="chat-message-input"
-  name="message"
-  type="text"
-  value={text}
-  onChange={(e) => setText(e.target.value)}
-  placeholder="Start a new message"
-  className="..."
-  disabled={sending}
-/>
-              <button
-                type="submit"
-                disabled={!text.trim() || sending}
-                className="bg-blue-500 hover:bg-blue-600 text-white p-2.5 rounded-full transition disabled:opacity-50"
+            <div className="border-t border-gray-200 dark:border-gray-800">
+              {pendingMedia && (
+                <div className="p-3 pb-0 flex items-start gap-3">
+                  <div className="relative">
+                    {pendingMedia.type === 'video' ? (
+                      <video
+                        src={pendingMedia.previewUrl}
+                        className="w-24 h-24 object-cover rounded-lg bg-black"
+                      />
+                    ) : (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={pendingMedia.previewUrl}
+                        alt="preview"
+                        width={96}
+                        height={96}
+                        className="w-24 h-24 object-cover rounded-lg"
+                      />
+                    )}
+                    <button
+                      type="button"
+                      onClick={clearPendingMedia}
+                      className="absolute -top-1.5 -right-1.5 bg-gray-900 text-white rounded-full p-0.5"
+                    >
+                      <XIcon className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Ready to send
+                  </p>
+                </div>
+              )}
+
+              <form
+                onSubmit={handleSend}
+                className="p-4 flex items-center gap-2"
               >
-                {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              </button>
-            </form>
+                <input
+                  ref={fileInputRef}
+                  id="chat-file-input"
+                  name="file"
+                  type="file"
+                  accept="image/*,video/*"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={handleAttach}
+                  disabled={uploading || sending || !activeConv}
+                  className="p-2.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 disabled:opacity-50 transition"
+                  title="Attach image or video"
+                >
+                  {uploading ? (
+                    <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
+                  ) : (
+                    <ImageIcon className="w-5 h-5" />
+                  )}
+                </button>
+                <input
+                  id="chat-message-input"
+                  name="message"
+                  type="text"
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  placeholder="Start a new message"
+                  className="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-gray-800 dark:text-white rounded-full outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  disabled={sending}
+                />
+                <button
+                  type="submit"
+                  disabled={(!text.trim() && !pendingMedia) || sending || uploading}
+                  className="bg-blue-500 hover:bg-blue-600 text-white p-2.5 rounded-full transition disabled:opacity-50"
+                >
+                  {sending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                </button>
+              </form>
+            </div>
           </div>
         ) : (
           <div className="flex-1 hidden md:flex items-center justify-center bg-gray-50 dark:bg-gray-900">
             <div className="text-center">
               <MessageCircle className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-              <p className="text-gray-500 dark:text-gray-400 text-sm">Select a conversation</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
+                Select a conversation
+              </p>
               <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">
                 or open a profile and click Message
               </p>

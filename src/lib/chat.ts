@@ -13,6 +13,8 @@ export interface ChatMessage {
   conversation: string;
   sender: ChatUser;
   text: string;
+  mediaUrl?: string | null;
+  mediaType?: 'image' | 'video' | null;
   read: boolean;
   createdAt: string;
 }
@@ -25,6 +27,8 @@ export interface Conversation {
     _id: string;
     text: string;
     sender: { _id: string; username: string };
+    mediaUrl?: string | null;
+    mediaType?: 'image' | 'video' | null;
     createdAt: string;
     read: boolean;
   };
@@ -57,7 +61,6 @@ export async function getMessages(
     conversationId === 'undefined' ||
     conversationId.startsWith('temp-')
   ) {
-    console.warn('Invalid conversationId:', conversationId);
     return [];
   }
   try {
@@ -75,11 +78,30 @@ export async function getMessages(
 export async function sendMessage(
   conversationId: string,
   text: string,
+  mediaUrl?: string,
+  mediaType?: 'image' | 'video',
 ): Promise<ChatMessage> {
   const res = await api.post(
     '/chat/conversations/' + conversationId + '/messages',
-    { text },
-    { timeout: 10000 },
+    { text, mediaUrl, mediaType },
+    { timeout: 30000 },
+  );
+  return res.data;
+}
+
+export async function uploadChatMedia(
+  conversationId: string,
+  file: File,
+): Promise<{ url: string; type: 'image' | 'video' }> {
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await api.post(
+    '/chat/conversations/' + conversationId + '/upload',
+    formData,
+    {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 60000,
+    },
   );
   return res.data;
 }
