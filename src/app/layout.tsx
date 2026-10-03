@@ -5,6 +5,8 @@ import { AuthProvider } from '@/lib/auth-context';
 import { InteractionsProvider } from '@/lib/user-interactions';
 import { ThemeProvider } from '@/lib/theme';
 import { Footer } from '@/components/Footer';
+import { PwaProvider } from '@/components/PwaProvider';
+
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -96,7 +98,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className={inter.className + ' bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100'}>
-        <ThemeProvider>
+        <PwaProvider />  
+         <ThemeProvider>
           <AuthProvider>
             <InteractionsProvider>
               <div className="min-h-screen flex flex-col">

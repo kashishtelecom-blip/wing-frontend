@@ -1,0 +1,49 @@
+{
+  "name": "Wing — A new home for your ideas",
+  "short_name": "Wing",
+  "description": "Post, connect, and build your community. Wing is a modern social platform.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait",
+  "scope": "/",
+  "categories": ["social", "communication"],
+  "icons": [
+    {
+      "src": "/wing-logo-v2.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/wing-logo-v2.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/wing-logo-v2.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Chat",
+      "url": "/chat",
+      "description": "Open your messages"
+    },
+    {
+      "name": "Explore",
+      "url": "/explore",
+      "description": "Discover new posts"
+    },
+    {
+      "name": "New post",
+      "url": "/",
+      "description": "Post a new Wing"
+    }
+  ]
+}
