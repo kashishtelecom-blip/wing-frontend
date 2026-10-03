@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Bell, Home, Search, MessageCircle, Clock, User, Flame, Sun, Moon } from 'lucide-react';
+import { Bell, Home, Search, MessageCircle, Clock, User, Flame, Sun, Moon, Compass } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { useTheme } from '@/lib/theme';
 import { getUnreadCount } from '@/lib/notifications';
@@ -82,6 +82,10 @@ export function NavBar() {
             <Search className="w-4 h-4" />
             <span className="hidden md:inline">Search</span>
           </Link>
+            <Link href="/explore" className={linkClass('/explore')} title="Explore">
+           <Compass className="w-4 h-4" />
+           <span className="hidden md:inline">Explore</span>
+      </Link>
           <Link href="/trending" className={linkClass('/trending')} title="Trending">
             <Flame className="w-4 h-4" />
             <span className="hidden md:inline">Trending</span>
