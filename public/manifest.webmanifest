@@ -12,19 +12,13 @@
   "icons": [
     {
       "src": "/wing-logo-v2.png",
-      "sizes": "192x192",
+      "sizes": "any",
       "type": "image/png",
       "purpose": "any"
     },
     {
       "src": "/wing-logo-v2.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/wing-logo-v2.png",
-      "sizes": "512x512",
+      "sizes": "any",
       "type": "image/png",
       "purpose": "maskable"
     }
@@ -33,17 +27,38 @@
     {
       "name": "Chat",
       "url": "/chat",
-      "description": "Open your messages"
+      "description": "Open your messages",
+      "icons": [
+        {
+          "src": "/wing-logo-v2.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
     },
     {
       "name": "Explore",
       "url": "/explore",
-      "description": "Discover new posts"
+      "description": "Discover new posts",
+      "icons": [
+        {
+          "src": "/wing-logo-v2.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
     },
     {
       "name": "New post",
       "url": "/",
-      "description": "Post a new Wing"
+      "description": "Post a new Wing",
+      "icons": [
+        {
+          "src": "/wing-logo-v2.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
     }
   ]
 }
