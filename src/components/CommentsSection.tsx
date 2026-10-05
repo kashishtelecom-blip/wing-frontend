@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Loader2, Send, Trash2 } from 'lucide-react';
+import {
+  Loader2, Send, Trash2, Heart, Repeat2, Reply as ReplyIcon, Share2,
+} from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { Avatar } from './Avatar';
 import { VerifiedBadge } from './VerifiedBadge';
@@ -18,6 +20,26 @@ interface Props {
   onCountChange: (delta: number) => void;
 }
 
+const LS_LIKED = 'wing_comment_likes';
+const LS_REPOSTED = 'wing_comment_reposts';
+
+function loadSet(key: string): Set<string> {
+  if (typeof window === 'undefined') return new Set();
+  try {
+    const raw = localStorage.getItem(key);
+    return new Set(raw ? JSON.parse(raw) : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveSet(key: string, set: Set<string>) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(key, JSON.stringify(Array.from(set)));
+  } catch {}
+}
+
 export function CommentsSection({ wingId, commentsCount, onCountChange }: Props) {
   const { user } = useAuth();
   const [comments, setComments] = useState<Comment[]>([]);
@@ -25,6 +47,14 @@ export function CommentsSection({ wingId, commentsCount, onCountChange }: Props)
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
+
+  const [likedComments, setLikedComments] = useState<Set<string>>(new Set());
+  const [repostedComments, setRepostedComments] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    setLikedComments(loadSet(LS_LIKED));
+    setRepostedComments(loadSet(LS_REPOSTED));
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -49,14 +79,10 @@ export function CommentsSection({ wingId, commentsCount, onCountChange }: Props)
     setSending(true);
     setError('');
 
-    // Optimistic
     const optimistic: Comment = {
       _id: 'temp-' + Date.now(),
       wing: wingId,
-      author: {
-        _id: user.userId,
-        username: user.username,
-      },
+      author: { _id: user.userId, username: user.username },
       text: sendText,
       createdAt: new Date().toISOString(),
     };
@@ -85,10 +111,43 @@ export function CommentsSection({ wingId, commentsCount, onCountChange }: Props)
     onCountChange(-1);
     try {
       await deleteComment(wingId, comment._id);
-    } catch (err) {
+    } catch {
       setComments(previous);
       onCountChange(1);
     }
+  };
+
+  const handleLikeComment = (comment: Comment) => {
+    const next = new Set(likedComments);
+    if (next.has(comment._id)) next.delete(comment._id);
+    else next.add(comment._id);
+    setLikedComments(next);
+    saveSet(LS_LIKED, next);
+  };
+
+  const handleRepostComment = (comment: Comment) => {
+    const next = new Set(repostedComments);
+    if (next.has(comment._id)) next.delete(comment._id);
+    else next.add(comment._id);
+    setRepostedComments(next);
+    saveSet(LS_REPOSTED, next);
+  };
+
+  const handleReplyComment = (comment: Comment) => {
+    const mention = '@' + (comment.author?.username || 'user') + ' ';
+    setText((t) => (t.startsWith(mention) ? t : mention + t));
+  };
+
+  const handleShareComment = async (comment: Comment) => {
+    const url = `${window.location.origin}/wing/${wingId}#comment-${comment._id}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        alert('Link copied!');
+      }
+    } catch {}
   };
 
   return (
@@ -106,8 +165,14 @@ export function CommentsSection({ wingId, commentsCount, onCountChange }: Props)
           {comments.map((c) => {
             const isMine = user?.userId === c.author?._id;
             const isTemp = c._id.startsWith('temp-');
+            const liked = likedComments.has(c._id);
+            const reposted = repostedComments.has(c._id);
             return (
-              <div key={c._id} className={'flex gap-2 ' + (isTemp ? 'opacity-70' : '')}>
+              <div
+                key={c._id}
+                id={'comment-' + c._id}
+                className={'flex gap-2 ' + (isTemp ? 'opacity-70' : '')}
+              >
                 <Link
                   href={'/profile/' + (c.author?._id || '')}
                   onClick={(e) => e.stopPropagation()}
@@ -145,28 +210,89 @@ export function CommentsSection({ wingId, commentsCount, onCountChange }: Props)
                   <p className="text-sm text-gray-800 dark:text-gray-200 mt-0.5 whitespace-pre-wrap break-words">
                     <RichText text={c.text} />
                   </p>
+
+                  {/* ✅ Comment action row */}
+                  <div className="flex items-center gap-4 mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleLikeComment(c);
+                      }}
+                      className={
+                        'flex items-center gap-1 transition ' +
+                        (liked ? 'text-red-500' : 'hover:text-red-500')
+                      }
+                      title="Like comment"
+                    >
+                      <Heart className={liked ? 'w-3.5 h-3.5 fill-current' : 'w-3.5 h-3.5'} />
+                      <span>Like</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleReplyComment(c);
+                      }}
+                      className="flex items-center gap-1 hover:text-blue-500 transition"
+                      title="Reply to comment"
+                    >
+                      <ReplyIcon className="w-3.5 h-3.5" />
+                      <span>Reply</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRepostComment(c);
+                      }}
+                      className={
+                        'flex items-center gap-1 transition ' +
+                        (reposted ? 'text-green-500' : 'hover:text-green-500')
+                      }
+                      title="Repost comment"
+                    >
+                      <Repeat2 className="w-3.5 h-3.5" />
+                      <span>Repost</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleShareComment(c);
+                      }}
+                      className="flex items-center gap-1 hover:text-blue-500 transition"
+                      title="Share comment"
+                    >
+                      <Share2 className="w-3.5 h-3.5" />
+                      <span>Share</span>
+                    </button>
+
+                    {isMine && !isTemp && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(c);
+                        }}
+                        className="flex items-center gap-1 hover:text-red-500 transition ml-auto"
+                        title="Delete comment"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
-                {isMine && !isTemp && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(c);
-                    }}
-                    className="p-1 rounded-full hover:bg-red-50 dark:hover:bg-red-950/40 text-red-500 flex-shrink-0"
-                    title="Delete comment"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
               </div>
             );
           })}
         </div>
       )}
 
-      {error && (
-        <p className="text-xs text-red-500 mb-2">{error}</p>
-      )}
+      {error && <p className="text-xs text-red-500 mb-2">{error}</p>}
 
       {user && (
         <form
