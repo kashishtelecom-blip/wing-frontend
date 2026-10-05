@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import api from './api';
 import { useAuth } from './auth-context';
 
@@ -21,6 +21,11 @@ export function InteractionsProvider({ children }: { children: React.ReactNode }
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
   const [repostedIds, setRepostedIds] = useState<Set<string>>(new Set());
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
+
+  // ✅ In-flight guards so rapid clicks don't fire duplicate requests
+  const inFlightLikes = useRef<Set<string>>(new Set());
+  const inFlightReposts = useRef<Set<string>>(new Set());
+  const inFlightBookmarks = useRef<Set<string>>(new Set());
 
   const refresh = useCallback(async () => {
     if (!user) return;
@@ -56,50 +61,103 @@ export function InteractionsProvider({ children }: { children: React.ReactNode }
     }
   }, [user, refresh]);
 
-  const toggleLike = async (wingId: string) => {
-    const wasLiked = likedIds.has(wingId);
-    const next = new Set(likedIds);
-    if (wasLiked) next.delete(wingId); else next.add(wingId);
-    setLikedIds(next);
+  // ✅ Generalized toggle with in-flight guard + 409 recovery
+  const toggle = async (
+    wingId: string,
+    currentSet: Set<string>,
+    setFn: React.Dispatch<React.SetStateAction<Set<string>>>,
+    inFlight: Set<string>,
+    doLike: () => Promise<any>,
+    doUnlike: () => Promise<any>,
+  ): Promise<boolean> => {
+    // Ignore click if a request is already in-flight for this wing
+    if (inFlight.has(wingId)) {
+      return currentSet.has(wingId);
+    }
+
+    const wasActive = currentSet.has(wingId);
+    inFlight.add(wingId);
+
+    // Optimistic update
+    setFn((prev) => {
+      const next = new Set(prev);
+      if (wasActive) next.delete(wingId);
+      else next.add(wingId);
+      return next;
+    });
+
     try {
-      if (wasLiked) await api.delete('/wings/' + wingId + '/like');
-      else await api.post('/wings/' + wingId + '/like');
-      return !wasLiked;
-    } catch {
-      setLikedIds(likedIds);
-      return wasLiked;
+      if (wasActive) {
+        await doUnlike();
+      } else {
+        await doLike();
+      }
+      return !wasActive;
+    } catch (err: any) {
+      const status = err?.response?.status;
+
+      if (status === 409) {
+        // Server says already-liked/already-reposted/etc. Sync to "on" state
+        setFn((prev) => {
+          const next = new Set(prev);
+          next.add(wingId);
+          return next;
+        });
+        return true;
+      }
+
+      if (status === 404) {
+        // Server says not-liked/not-reposted/etc. Sync to "off" state
+        setFn((prev) => {
+          const next = new Set(prev);
+          next.delete(wingId);
+          return next;
+        });
+        return false;
+      }
+
+      // Unknown error — revert to original
+      setFn((prev) => {
+        const next = new Set(prev);
+        if (wasActive) next.add(wingId);
+        else next.delete(wingId);
+        return next;
+      });
+      return wasActive;
+    } finally {
+      inFlight.delete(wingId);
     }
   };
 
-  const toggleRepost = async (wingId: string) => {
-    const wasReposted = repostedIds.has(wingId);
-    const next = new Set(repostedIds);
-    if (wasReposted) next.delete(wingId); else next.add(wingId);
-    setRepostedIds(next);
-    try {
-      if (wasReposted) await api.delete('/wings/' + wingId + '/repost');
-      else await api.post('/wings/' + wingId + '/repost', {});
-      return !wasReposted;
-    } catch {
-      setRepostedIds(repostedIds);
-      return wasReposted;
-    }
-  };
+  const toggleLike = (wingId: string) =>
+    toggle(
+      wingId,
+      likedIds,
+      setLikedIds,
+      inFlightLikes.current,
+      () => api.post('/wings/' + wingId + '/like'),
+      () => api.delete('/wings/' + wingId + '/like'),
+    );
 
-  const toggleBookmark = async (wingId: string) => {
-    const wasBookmarked = bookmarkedIds.has(wingId);
-    const next = new Set(bookmarkedIds);
-    if (wasBookmarked) next.delete(wingId); else next.add(wingId);
-    setBookmarkedIds(next);
-    try {
-      if (wasBookmarked) await api.delete('/wings/' + wingId + '/bookmark');
-      else await api.post('/wings/' + wingId + '/bookmark');
-      return !wasBookmarked;
-    } catch {
-      setBookmarkedIds(bookmarkedIds);
-      return wasBookmarked;
-    }
-  };
+  const toggleRepost = (wingId: string) =>
+    toggle(
+      wingId,
+      repostedIds,
+      setRepostedIds,
+      inFlightReposts.current,
+      () => api.post('/wings/' + wingId + '/repost', {}),
+      () => api.delete('/wings/' + wingId + '/repost'),
+    );
+
+  const toggleBookmark = (wingId: string) =>
+    toggle(
+      wingId,
+      bookmarkedIds,
+      setBookmarkedIds,
+      inFlightBookmarks.current,
+      () => api.post('/wings/' + wingId + '/bookmark'),
+      () => api.delete('/wings/' + wingId + '/bookmark'),
+    );
 
   return (
     <InteractionsContext.Provider
