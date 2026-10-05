@@ -4,9 +4,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Bell, Home, Search, MessageCircle, Clock, User, Flame, Sun, Moon, Compass } from 'lucide-react';
+import {
+  Bell, Home, Search, MessageCircle, Clock, User, Flame, Sun, Moon, Compass,
+} from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { useTheme } from '@/lib/theme';
+import { useSocket } from '@/lib/socket-context';
 import { getUnreadCount } from '@/lib/notifications';
 import { MoreMenu } from './MoreMenu';
 import { VerifiedBadge } from './VerifiedBadge';
@@ -15,6 +18,7 @@ import { getMediaUrl } from '@/lib/media';
 
 export function NavBar() {
   const { user } = useAuth();
+  const { socket } = useSocket();
   const { theme, toggleTheme } = useTheme();
   const pathname = usePathname();
   const [unread, setUnread] = useState(0);
@@ -22,7 +26,8 @@ export function NavBar() {
   const [avatarUrl, setAvatarUrl] = useState('');
   const [isVerified, setIsVerified] = useState(false);
 
-    useEffect(() => {
+  // Poll unread counts (fallback if socket fails)
+  useEffect(() => {
     if (!user?.userId) return;
 
     let cancelled = false;
@@ -34,7 +39,9 @@ export function NavBar() {
         if (!cancelled) setUnread(n);
       } catch {}
       try {
-        const chatRes = await api.get('/chat/unread-count').catch(() => ({ data: { count: 0 } }));
+        const chatRes = await api
+          .get('/chat/unread-count')
+          .catch(() => ({ data: { count: 0 } }));
         if (!cancelled) setChatUnread(chatRes?.data?.count || 0);
       } catch {}
       try {
@@ -55,6 +62,22 @@ export function NavBar() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.userId, pathname]);
+
+  // 🔌 Real-time notification listener
+  useEffect(() => {
+    if (!socket || !user?.userId) return;
+
+    const onNotification = (payload: any) => {
+      console.log('🔔 Real-time notification:', payload);
+      setUnread((n) => n + 1);
+    };
+
+    socket.on('notification', onNotification);
+    return () => {
+      socket.off('notification', onNotification);
+    };
+  }, [socket, user?.userId]);
+
   if (!user) return null;
 
   const linkClass = (path: string) =>
@@ -66,11 +89,19 @@ export function NavBar() {
   return (
     <header className="border-b border-gray-200 dark:border-gray-800 sticky top-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur z-30">
       <div className="max-w-3xl mx-auto px-3 py-2.5 flex items-center justify-between gap-2">
-           <Link href="/" className="flex items-center gap-2 flex-shrink-0">
+        <Link href="/" className="flex items-center gap-2 flex-shrink-0">
           <div className="logo-wrap">
-            <Image src="/wing-logo-v2.png" alt="Wing" width={30} height={30} className="object-contain" />
+            <Image
+              src="/wing-logo-v2.png"
+              alt="Wing"
+              width={30}
+              height={30}
+              className="object-contain"
+            />
           </div>
-          <span className="text-lg font-bold text-gray-900 dark:text-white hidden sm:inline">Wing</span>
+          <span className="text-lg font-bold text-gray-900 dark:text-white hidden sm:inline">
+            Wing
+          </span>
         </Link>
 
         <nav className="flex items-center gap-0.5">
@@ -82,15 +113,23 @@ export function NavBar() {
             <Search className="w-4 h-4" />
             <span className="hidden md:inline">Search</span>
           </Link>
-            <Link href="/explore" className={linkClass('/explore')} title="Explore">
-           <Compass className="w-4 h-4" />
-           <span className="hidden md:inline">Explore</span>
-      </Link>
-          <Link href="/trending" className={linkClass('/trending')} title="Trending">
+          <Link href="/explore" className={linkClass('/explore')} title="Explore">
+            <Compass className="w-4 h-4" />
+            <span className="hidden md:inline">Explore</span>
+          </Link>
+          <Link
+            href="/trending"
+            className={linkClass('/trending')}
+            title="Trending"
+          >
             <Flame className="w-4 h-4" />
             <span className="hidden md:inline">Trending</span>
           </Link>
-          <Link href="/notifications" className={linkClass('/notifications') + ' relative'} title="Alerts">
+          <Link
+            href="/notifications"
+            className={linkClass('/notifications') + ' relative'}
+            title="Alerts"
+          >
             <Bell className="w-4 h-4" />
             <span className="hidden md:inline">Alerts</span>
             {unread > 0 && (
@@ -99,7 +138,11 @@ export function NavBar() {
               </span>
             )}
           </Link>
-          <Link href="/chat" className={linkClass('/chat') + ' relative'} title="Chat">
+          <Link
+            href="/chat"
+            className={linkClass('/chat') + ' relative'}
+            title="Chat"
+          >
             <MessageCircle className="w-4 h-4" />
             <span className="hidden md:inline">Chat</span>
             {chatUnread > 0 && (
@@ -112,7 +155,11 @@ export function NavBar() {
             <Clock className="w-4 h-4" />
             <span className="hidden md:inline">History</span>
           </Link>
-          <Link href={'/profile/' + user.userId} className={linkClass('/profile/' + user.userId)} title="Profile">
+          <Link
+            href={'/profile/' + user.userId}
+            className={linkClass('/profile/' + user.userId)}
+            title="Profile"
+          >
             <User className="w-4 h-4" />
             <span className="hidden md:inline">Profile</span>
           </Link>
@@ -131,28 +178,35 @@ export function NavBar() {
               <Moon className="w-4 h-4 text-gray-600" />
             )}
           </button>
-          <Link href={'/profile/' + user.userId} className="flex items-center gap-1.5 hover:opacity-80 transition">
+          <Link
+            href={'/profile/' + user.userId}
+            className="flex items-center gap-1.5 hover:opacity-80 transition"
+          >
             {avatarUrl ? (
-  // eslint-disable-next-line @next/next/no-img-element
-  <img
-    src={getMediaUrl(avatarUrl)}
-    alt={user.username}
-    className="w-7 h-7 rounded-full object-cover"
-    onError={(e) => {
-      const target = e.target as HTMLImageElement;
-      target.style.display = 'none';
-      const fallback = target.nextElementSibling as HTMLElement | null;
-      if (fallback) fallback.style.display = 'flex';
-    }}
-  />
-) : null}
-<div
-  className="w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-semibold"
-  style={{ display: avatarUrl ? 'none' : 'flex' }}
->
-  {user.username?.[0]?.toUpperCase() || '?'}
-</div>
-            <span className="text-sm text-gray-700 dark:text-gray-300 hidden lg:inline">@{user.username}</span>
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={getMediaUrl(avatarUrl)}
+                alt={user.username}
+                width={28}
+                height={28}
+                className="w-7 h-7 rounded-full object-cover"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                  const fallback = target.nextElementSibling as HTMLElement | null;
+                  if (fallback) fallback.style.display = 'flex';
+                }}
+              />
+            ) : null}
+            <div
+              className="w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-semibold"
+              style={{ display: avatarUrl ? 'none' : 'flex' }}
+            >
+              {user.username?.[0]?.toUpperCase() || '?'}
+            </div>
+            <span className="text-sm text-gray-700 dark:text-gray-300 hidden lg:inline">
+              @{user.username}
+            </span>
             {isVerified && <VerifiedBadge size="sm" />}
           </Link>
         </div>
