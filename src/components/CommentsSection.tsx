@@ -12,6 +12,7 @@ import { RichText } from './RichText';
 import { timeAgo } from '@/lib/time';
 import {
   Comment, getComments, createComment, deleteComment,
+  likeComment, unlikeComment,
 } from '@/lib/comments';
 
 interface Props {
@@ -20,7 +21,6 @@ interface Props {
   onCountChange: (delta: number) => void;
 }
 
-const LS_LIKED = 'wing_comment_likes';
 const LS_REPOSTED = 'wing_comment_reposts';
 
 function loadSet(key: string): Set<string> {
@@ -48,11 +48,10 @@ export function CommentsSection({ wingId, commentsCount, onCountChange }: Props)
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
 
-  const [likedComments, setLikedComments] = useState<Set<string>>(new Set());
   const [repostedComments, setRepostedComments] = useState<Set<string>>(new Set());
+  const [likeInFlight, setLikeInFlight] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    setLikedComments(loadSet(LS_LIKED));
     setRepostedComments(loadSet(LS_REPOSTED));
   }, []);
 
@@ -84,6 +83,8 @@ export function CommentsSection({ wingId, commentsCount, onCountChange }: Props)
       wing: wingId,
       author: { _id: user.userId, username: user.username },
       text: sendText,
+      likesCount: 0,
+      likedByMe: false,
       createdAt: new Date().toISOString(),
     };
     setComments((prev) => [...prev, optimistic]);
@@ -117,12 +118,53 @@ export function CommentsSection({ wingId, commentsCount, onCountChange }: Props)
     }
   };
 
-  const handleLikeComment = (comment: Comment) => {
-    const next = new Set(likedComments);
-    if (next.has(comment._id)) next.delete(comment._id);
-    else next.add(comment._id);
-    setLikedComments(next);
-    saveSet(LS_LIKED, next);
+  const handleLikeComment = async (comment: Comment) => {
+    if (!user || comment._id.startsWith('temp-')) return;
+    if (likeInFlight.has(comment._id)) return;
+
+    setLikeInFlight((prev) => new Set(prev).add(comment._id));
+
+    const wasLiked = !!comment.likedByMe;
+    const prevCount = comment.likesCount || 0;
+    const nextCount = wasLiked ? Math.max(0, prevCount - 1) : prevCount + 1;
+
+    // Optimistic update
+    setComments((prev) =>
+      prev.map((c) =>
+        c._id === comment._id
+          ? { ...c, likedByMe: !wasLiked, likesCount: nextCount }
+          : c,
+      ),
+    );
+
+    try {
+      const res = wasLiked
+        ? await unlikeComment(wingId, comment._id)
+        : await likeComment(wingId, comment._id);
+      // Sync with server truth
+      setComments((prev) =>
+        prev.map((c) =>
+          c._id === comment._id
+            ? { ...c, likedByMe: res.liked, likesCount: res.likesCount }
+            : c,
+        ),
+      );
+    } catch (err) {
+      // Revert
+      setComments((prev) =>
+        prev.map((c) =>
+          c._id === comment._id
+            ? { ...c, likedByMe: wasLiked, likesCount: prevCount }
+            : c,
+        ),
+      );
+    } finally {
+      setLikeInFlight((prev) => {
+        const next = new Set(prev);
+        next.delete(comment._id);
+        return next;
+      });
+    }
   };
 
   const handleRepostComment = (comment: Comment) => {
@@ -141,8 +183,8 @@ export function CommentsSection({ wingId, commentsCount, onCountChange }: Props)
   const handleShareComment = async (comment: Comment) => {
     const url = `${window.location.origin}/wing/${wingId}#comment-${comment._id}`;
     try {
-      if (navigator.share) {
-        await navigator.share({ url });
+      if ((navigator as any).share) {
+        await (navigator as any).share({ url });
       } else {
         await navigator.clipboard.writeText(url);
         alert('Link copied!');
@@ -165,7 +207,7 @@ export function CommentsSection({ wingId, commentsCount, onCountChange }: Props)
           {comments.map((c) => {
             const isMine = user?.userId === c.author?._id;
             const isTemp = c._id.startsWith('temp-');
-            const liked = likedComments.has(c._id);
+            const liked = !!c.likedByMe;
             const reposted = repostedComments.has(c._id);
             return (
               <div
@@ -211,7 +253,6 @@ export function CommentsSection({ wingId, commentsCount, onCountChange }: Props)
                     <RichText text={c.text} />
                   </p>
 
-                  {/* ✅ Comment action row */}
                   <div className="flex items-center gap-4 mt-1.5 text-xs text-gray-500 dark:text-gray-400">
                     <button
                       type="button"
@@ -226,7 +267,7 @@ export function CommentsSection({ wingId, commentsCount, onCountChange }: Props)
                       title="Like comment"
                     >
                       <Heart className={liked ? 'w-3.5 h-3.5 fill-current' : 'w-3.5 h-3.5'} />
-                      <span>Like</span>
+                      <span>{c.likesCount || 0}</span>
                     </button>
 
                     <button

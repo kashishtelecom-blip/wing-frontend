@@ -13,6 +13,8 @@ export interface Comment {
   wing: string;
   author: CommentAuthor;
   text: string;
+  likesCount?: number;
+  likedByMe?: boolean;
   createdAt: string;
   updatedAt?: string;
 }
@@ -26,7 +28,6 @@ export async function getComments(
     const res = await api.get(
       `/wings/${wingId}/comments?page=${page}&limit=${limit}`,
     );
-    // Handle both array and {data: []} shapes
     const data = res.data;
     return Array.isArray(data) ? data : data?.data || [];
   } catch (err) {
@@ -48,4 +49,24 @@ export async function deleteComment(
   commentId: string,
 ): Promise<void> {
   await api.delete(`/wings/${wingId}/comments/${commentId}`);
+}
+
+export async function likeComment(
+  wingId: string,
+  commentId: string,
+): Promise<{ liked: boolean; likesCount: number }> {
+  const res = await api.post(
+    `/wings/${wingId}/comments/${commentId}/like`,
+  );
+  return res.data;
+}
+
+export async function unlikeComment(
+  wingId: string,
+  commentId: string,
+): Promise<{ liked: boolean; likesCount: number }> {
+  const res = await api.delete(
+    `/wings/${wingId}/comments/${commentId}/like`,
+  );
+  return res.data;
 }
