@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/lib/auth-context';
+import { SocketProvider } from '@/lib/socket-context';
 import { InteractionsProvider } from '@/lib/user-interactions';
 import { ThemeProvider } from '@/lib/theme';
 import { Footer } from '@/components/Footer';
@@ -101,12 +102,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <PwaProvider />  
          <ThemeProvider>
           <AuthProvider>
+             <SocketProvider>
             <InteractionsProvider>
               <div className="min-h-screen flex flex-col">
                 <div className="flex-1">{children}</div>
                 <Footer />
               </div>
             </InteractionsProvider>
+            </SocketProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>
