@@ -154,3 +154,12 @@ export async function getChatUnread(): Promise<number> {
     return 0;
   }
 }
+export function joinConversationRoom(socket: any, conversationId: string) {
+  if (!socket) return;
+  socket.emit('join-conversation', { conversationId });
+}
+
+export function leaveConversationRoom(socket: any, conversationId: string) {
+  if (!socket) return;
+  socket.emit('leave-conversation', { conversationId });
+}

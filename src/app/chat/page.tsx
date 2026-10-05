@@ -18,7 +18,9 @@ import {
   getConversations, startConversation,
   getMessages, sendMessage, markConversationRead,
   uploadChatMedia, deleteMessage,
+  joinConversationRoom, leaveConversationRoom,
 } from '@/lib/chat';
+import { useSocket } from '@/lib/socket-context';
 
 function MessageTicks({
   isOptimistic,
@@ -40,6 +42,7 @@ function MessageTicks({
 
 function ChatPageInner() {
   const { user, loading: authLoading } = useAuth();
+  const { socket } = useSocket();
   const router = useRouter();
   const searchParams = useSearchParams();
   const targetUserId = searchParams.get('user');
@@ -127,7 +130,7 @@ function ChatPageInner() {
     }
   }, []);
 
-  useEffect(() => {
+    useEffect(() => {
     if (!activeConv) {
       activeConvIdRef.current = null;
       setMessages([]);
@@ -136,16 +139,57 @@ function ChatPageInner() {
     activeConvIdRef.current = activeConv._id;
     setMessages([]);
     loadMessages(false);
+
+    // 🔌 Join the conversation room for real-time messages
+    if (socket) joinConversationRoom(socket, activeConv._id);
+
+    // Fallback polling every 20s (was 5s) — catches missed messages
     if (pollRef.current) clearInterval(pollRef.current);
-    pollRef.current = setInterval(() => loadMessages(true), 5000);
+    pollRef.current = setInterval(() => loadMessages(true), 20000);
+
     return () => {
+      if (socket) leaveConversationRoom(socket, activeConv._id);
       if (pollRef.current) {
         clearInterval(pollRef.current);
         pollRef.current = null;
       }
     };
-  }, [activeConv, loadMessages]);
+  }, [activeConv, loadMessages, socket]);
 
+  // 🔌 Listen for incoming messages in real time
+  useEffect(() => {
+    if (!socket) return;
+
+    const onNewMessage = (msg: ChatMessage) => {
+      console.log('💬 Real-time message:', msg);
+      // Only append if it belongs to the active conversation
+      const activeId = activeConvIdRef.current;
+      if (!activeId || msg.conversation !== activeId) return;
+
+      setMessages((prev) => {
+        // Dedupe — if it's already there, skip
+        if (prev.some((m) => m._id === msg._id)) return prev;
+        // Remove matching optimistic temp message if this is our own message
+        const filtered = prev.filter(
+          (m) =>
+            !(
+              m._id.startsWith('temp-') &&
+              m.sender._id === msg.sender._id &&
+              m.text === msg.text
+            ),
+        );
+        return [...filtered, msg];
+      });
+
+      // Mark as read automatically since the chat is open
+      markConversationRead(activeId).catch(() => {});
+    };
+
+    socket.on('new-message', onNewMessage);
+    return () => {
+      socket.off('new-message', onNewMessage);
+    };
+  }, [socket]);
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
   }, [messages]);
