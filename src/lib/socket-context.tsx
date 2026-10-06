@@ -14,22 +14,26 @@ import { getToken } from './auth';
 interface SocketContextValue {
   socket: Socket | null;
   connected: boolean;
+  onlineUsers: Set<string>;
+  isOnline: (userId: string) => boolean;
 }
 
 const SocketContext = createContext<SocketContextValue>({
   socket: null,
   connected: false,
+  onlineUsers: new Set(),
+  isOnline: () => false,
 });
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
-// Strip "/api" suffix to get the socket base URL
 const SOCKET_URL = API_URL.replace(/\/api\/?$/, '');
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const socketRef = useRef<Socket | null>(null);
   const [connected, setConnected] = useState(false);
+  const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const token = getToken();
@@ -38,6 +42,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         socketRef.current.disconnect();
         socketRef.current = null;
         setConnected(false);
+        setOnlineUsers(new Set());
       }
       return;
     }
@@ -62,18 +67,39 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       console.warn('Socket connect error:', err.message);
     });
 
+    socket.on('online-users', (ids: string[]) => {
+      setOnlineUsers(new Set(ids));
+    });
+    socket.on('user-online', ({ userId }: { userId: string }) => {
+      setOnlineUsers((prev) => {
+        const next = new Set(prev);
+        next.add(userId);
+        return next;
+      });
+    });
+    socket.on('user-offline', ({ userId }: { userId: string }) => {
+      setOnlineUsers((prev) => {
+        const next = new Set(prev);
+        next.delete(userId);
+        return next;
+      });
+    });
+
     socketRef.current = socket;
 
     return () => {
       socket.disconnect();
       socketRef.current = null;
       setConnected(false);
+      setOnlineUsers(new Set());
     };
   }, [user]);
 
+  const isOnline = (userId: string) => onlineUsers.has(userId);
+
   return (
     <SocketContext.Provider
-      value={{ socket: socketRef.current, connected }}
+      value={{ socket: socketRef.current, connected, onlineUsers, isOnline }}
     >
       {children}
     </SocketContext.Provider>

@@ -35,7 +35,7 @@ function MessageTicks({
 
 function ChatPageInner() {
   const { user, loading: authLoading } = useAuth();
-  const { socket } = useSocket();
+  const { socket, isOnline } = useSocket();
   const router = useRouter();
   const searchParams = useSearchParams();
   const targetUserId = searchParams.get('user');
@@ -380,7 +380,12 @@ function ChatPageInner() {
                   onClick={() => setActiveConv(conv)}
                   className={convItemClass(activeConv?._id === conv._id)}
                 >
-                  <Avatar user={conv.other} size="md" linkTo={false} />
+                     <div className="relative flex-shrink-0">
+                    <Avatar user={conv.other} size="md" linkTo={false} />
+                    {isOnline(conv.other._id) && (
+                      <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-500 border-2 border-white dark:border-gray-950" />
+                    )}
+                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1">
                       <span className="font-semibold text-gray-900 dark:text-white text-sm truncate">
@@ -424,7 +429,12 @@ function ChatPageInner() {
                 href={'/profile/' + activeConv.other._id}
                 className="flex items-center gap-3 flex-1 min-w-0"
               >
-                <Avatar user={activeConv.other} size="md" linkTo={false} />
+                <div className="relative flex-shrink-0">
+                  <Avatar user={activeConv.other} size="md" linkTo={false} />
+                  {isOnline(activeConv.other._id) && (
+                    <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-500 border-2 border-white dark:border-gray-950" />
+                  )}
+                </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-1">
                     <span className="font-semibold text-gray-900 dark:text-white truncate">
