@@ -13,26 +13,19 @@ import { NavBar } from '@/components/NavBar';
 import { Avatar } from '@/components/Avatar';
 import { VerifiedBadge } from '@/components/VerifiedBadge';
 import { getMediaUrl } from '@/lib/media';
+import { useSocket } from '@/lib/socket-context';
 import {
   Conversation, ChatMessage,
   getConversations, startConversation,
   getMessages, sendMessage, markConversationRead,
   uploadChatMedia, deleteMessage,
   joinConversationRoom, leaveConversationRoom,
+  sendTyping,
 } from '@/lib/chat';
-import { useSocket } from '@/lib/socket-context';
 
 function MessageTicks({
-  isOptimistic,
-  read,
-  delivered,
-  isMe,
-}: {
-  isOptimistic: boolean;
-  read: boolean;
-  delivered: boolean;
-  isMe: boolean;
-}) {
+  isOptimistic, read, delivered, isMe,
+}: { isOptimistic: boolean; read: boolean; delivered: boolean; isMe: boolean }) {
   if (!isMe) return null;
   if (isOptimistic) return <Clock className="w-3 h-3 opacity-60" />;
   if (read) return <CheckCheck className="w-3.5 h-3.5 text-green-300" />;
@@ -67,11 +60,13 @@ function ChatPageInner() {
     x: number;
     y: number;
   } | null>(null);
+  const [otherTyping, setOtherTyping] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
   const activeConvIdRef = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) router.push('/login');
@@ -130,7 +125,7 @@ function ChatPageInner() {
     }
   }, []);
 
-    useEffect(() => {
+  useEffect(() => {
     if (!activeConv) {
       activeConvIdRef.current = null;
       setMessages([]);
@@ -139,14 +134,9 @@ function ChatPageInner() {
     activeConvIdRef.current = activeConv._id;
     setMessages([]);
     loadMessages(false);
-
-    // 🔌 Join the conversation room for real-time messages
     if (socket) joinConversationRoom(socket, activeConv._id);
-
-    // Fallback polling every 20s (was 5s) — catches missed messages
     if (pollRef.current) clearInterval(pollRef.current);
     pollRef.current = setInterval(() => loadMessages(true), 20000);
-
     return () => {
       if (socket) leaveConversationRoom(socket, activeConv._id);
       if (pollRef.current) {
@@ -156,20 +146,19 @@ function ChatPageInner() {
     };
   }, [activeConv, loadMessages, socket]);
 
-  // 🔌 Listen for incoming messages in real time
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+  }, [messages]);
+
+  // 🔌 Listen for real-time messages + typing events
   useEffect(() => {
     if (!socket) return;
 
     const onNewMessage = (msg: ChatMessage) => {
-      console.log('💬 Real-time message:', msg);
-      // Only append if it belongs to the active conversation
       const activeId = activeConvIdRef.current;
       if (!activeId || msg.conversation !== activeId) return;
-
       setMessages((prev) => {
-        // Dedupe — if it's already there, skip
         if (prev.some((m) => m._id === msg._id)) return prev;
-        // Remove matching optimistic temp message if this is our own message
         const filtered = prev.filter(
           (m) =>
             !(
@@ -180,19 +169,27 @@ function ChatPageInner() {
         );
         return [...filtered, msg];
       });
-
-      // Mark as read automatically since the chat is open
       markConversationRead(activeId).catch(() => {});
+      setOtherTyping(false);
+    };
+
+    const onTyping = (data: {
+      conversationId: string;
+      userId: string;
+      isTyping: boolean;
+    }) => {
+      if (data.userId === user?.userId) return;
+      if (data.conversationId !== activeConvIdRef.current) return;
+      setOtherTyping(data.isTyping);
     };
 
     socket.on('new-message', onNewMessage);
+    socket.on('typing', onTyping);
     return () => {
       socket.off('new-message', onNewMessage);
+      socket.off('typing', onTyping);
     };
-  }, [socket]);
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
-  }, [messages]);
+  }, [socket, user?.userId]);
 
   useEffect(() => {
     if (!contextMenu) return;
@@ -315,13 +312,7 @@ function ChatPageInner() {
     setMessages((prev) =>
       prev.map((m) =>
         m._id === msg._id
-          ? {
-              ...m,
-              text: '',
-              mediaUrl: null,
-              mediaType: null,
-              deletedAt: new Date().toISOString(),
-            }
+          ? { ...m, text: '', mediaUrl: null, mediaType: null, deletedAt: new Date().toISOString() }
           : m,
       ),
     );
@@ -338,9 +329,7 @@ function ChatPageInner() {
     if (!msg.text) return;
     try {
       await navigator.clipboard.writeText(msg.text);
-    } catch {
-      // ignore
-    }
+    } catch {}
   };
 
   const handleReply = (msg: ChatMessage) => {
@@ -443,9 +432,15 @@ function ChatPageInner() {
                     </span>
                     {activeConv.other.isVerified && <VerifiedBadge size="sm" />}
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                    @{activeConv.other.username}
-                  </p>
+                  {otherTyping ? (
+                    <p className="text-xs text-blue-500 dark:text-blue-400 italic">
+                      typing...
+                    </p>
+                  ) : (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                      @{activeConv.other.username}
+                    </p>
+                  )}
                 </div>
               </Link>
             </div>
@@ -684,7 +679,20 @@ function ChatPageInner() {
                   name="message"
                   type="text"
                   value={text}
-                  onChange={(e) => setText(e.target.value)}
+                  onChange={(e) => {
+                    setText(e.target.value);
+                    if (socket && activeConv) {
+                      sendTyping(socket, activeConv._id, true);
+                      if (typingTimeoutRef.current) {
+                        clearTimeout(typingTimeoutRef.current);
+                      }
+                      typingTimeoutRef.current = setTimeout(() => {
+                        if (socket && activeConv) {
+                          sendTyping(socket, activeConv._id, false);
+                        }
+                      }, 2000);
+                    }
+                  }}
                   placeholder="Start a new message"
                   className="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-gray-800 dark:text-white rounded-full outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                   disabled={sending}

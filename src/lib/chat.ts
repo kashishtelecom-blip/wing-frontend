@@ -1,5 +1,14 @@
 import api from './api';
 
+export function sendTyping(
+  socket: any,
+  conversationId: string,
+  isTyping: boolean,
+) {
+  if (!socket) return;
+  socket.emit('typing', { conversationId, isTyping });
+}
+
 export interface ChatUser {
   _id: string;
   username: string;
