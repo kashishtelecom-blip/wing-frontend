@@ -8,6 +8,7 @@ import {
   Image as ImageIcon, Copy, Reply as ReplyIcon, Clock, Check, CheckCheck,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
+import { useSocket } from '@/lib/socket-context';
 import { NavBar } from '@/components/NavBar';
 import { Avatar } from '@/components/Avatar';
 import { VerifiedBadge } from '@/components/VerifiedBadge';
@@ -19,6 +20,7 @@ import {
   addMembers, removeMember,
   getCommunityMessages, sendCommunityMessage,
   uploadCommunityMedia, deleteCommunityMessage,
+  joinCommunityRoom, leaveCommunityRoom,
 } from '@/lib/communities';
 
 function MessageTicks({
@@ -35,6 +37,7 @@ export default function CommunityDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const { socket } = useSocket();
   const [community, setCommunity] = useState<Community | null>(null);
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(false);
@@ -207,23 +210,58 @@ export default function CommunityDetailPage() {
   const openChat = async () => {
     setShowChat(true);
     await loadMessages();
+    // 🔌 Join the community room for real-time updates
+    if (socket && communityId) joinCommunityRoom(socket, communityId);
+    // Fallback polling every 20s (was 5s)
     if (chatPollRef.current) clearInterval(chatPollRef.current);
-    chatPollRef.current = setInterval(loadMessages, 5000);
+    chatPollRef.current = setInterval(loadMessages, 20000);
   };
 
-  const closeChat = () => {
+ const closeChat = () => {
     setShowChat(false);
+    // 🔌 Leave the community room
+    if (socket && communityId) leaveCommunityRoom(socket, communityId);
     if (chatPollRef.current) {
       clearInterval(chatPollRef.current);
       chatPollRef.current = null;
     }
   };
 
+  // Cleanup polling on unmount
   useEffect(() => {
     return () => {
       if (chatPollRef.current) clearInterval(chatPollRef.current);
     };
   }, []);
+
+  // 🔌 Listen for new community messages in real time
+  useEffect(() => {
+    if (!socket) return;
+
+    const onNewMessage = (msg: CommunityMessage) => {
+      console.log('💬 Real-time community message:', msg);
+      // Only append if it's for the currently open community
+      if (msg.community !== communityId) return;
+
+      setMessages((prev) => {
+        if (prev.some((m) => m._id === msg._id)) return prev;
+        const filtered = prev.filter(
+          (m) =>
+            !(
+              m._id.startsWith('temp-') &&
+              m.sender._id === msg.sender._id &&
+              m.text === msg.text
+            ),
+        );
+        return [...filtered, msg];
+      });
+    };
+
+    socket.on('new-community-message', onNewMessage);
+    return () => {
+      socket.off('new-community-message', onNewMessage);
+    };
+  }, [socket, communityId]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });

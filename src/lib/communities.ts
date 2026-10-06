@@ -99,6 +99,16 @@ export async function getCommunityMessages(id: string): Promise<CommunityMessage
   return res.data || [];
 }
 
+export function joinCommunityRoom(socket: any, communityId: string) {
+  if (!socket) return;
+  socket.emit('join-community', { communityId });
+}
+
+export function leaveCommunityRoom(socket: any, communityId: string) {
+  if (!socket) return;
+  socket.emit('leave-community', { communityId });
+}
+
 export async function sendCommunityMessage(
   id: string,
   text: string,
