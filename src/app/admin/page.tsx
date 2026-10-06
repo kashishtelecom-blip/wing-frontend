@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   Shield, Users, FileText, MessageSquare, AlertTriangle, Loader2,
-  Search, Trash2, Ban, CheckCircle, UserCheck, Flag,
+  Search, Trash2, Ban, CheckCircle, UserCheck, Flag, BadgeCheck,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { NavBar } from '@/components/NavBar';
@@ -16,7 +16,7 @@ import {
   AdminStats, AdminUser, AdminWing, AdminCommunity, AdminReport,
   getAdminStats, listUsers, listWings, listCommunitiesAdmin, listReports,
   setUserRole, setUserActive, deleteUser, deleteWingAdmin,
-  deleteCommunityAdmin, updateReportStatus,
+  deleteCommunityAdmin, updateReportStatus, setUserVerified,
 } from '@/lib/admin';
 
 type Tab = 'overview' | 'users' | 'wings' | 'communities' | 'reports';
@@ -28,16 +28,12 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [denied, setDenied] = useState(false);
 
-  // Overview
   const [stats, setStats] = useState<AdminStats | null>(null);
-
-  // Lists
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [wings, setWings] = useState<AdminWing[]>([]);
   const [communities, setCommunities] = useState<AdminCommunity[]>([]);
   const [reports, setReports] = useState<AdminReport[]>([]);
 
-  // Search
   const [userQuery, setUserQuery] = useState('');
   const [wingQuery, setWingQuery] = useState('');
   const [reportFilter, setReportFilter] = useState<string>('');
@@ -65,28 +61,36 @@ export default function AdminPage() {
     try {
       const res = await listUsers(userQuery || undefined);
       setUsers(res.data);
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const loadWings = async () => {
     try {
       const res = await listWings(wingQuery || undefined);
       setWings(res.data);
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const loadCommunities = async () => {
     try {
       const res = await listCommunitiesAdmin();
       setCommunities(res.data);
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const loadReports = async () => {
     try {
       const res = await listReports(reportFilter || undefined);
       setReports(res.data);
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   useEffect(() => {
@@ -120,7 +124,9 @@ export default function AdminPage() {
     setWorking(u._id);
     try {
       const updated = await setUserRole(u._id, role);
-      setUsers((prev) => prev.map((x) => (x._id === u._id ? { ...x, role: updated.role } : x)));
+      setUsers((prev) =>
+        prev.map((x) => (x._id === u._id ? { ...x, role: updated.role } : x)),
+      );
     } catch (err: any) {
       alert(err.response?.data?.message || 'Failed');
     } finally {
@@ -134,7 +140,27 @@ export default function AdminPage() {
     setWorking(u._id);
     try {
       await setUserActive(u._id, !u.isActive);
-      setUsers((prev) => prev.map((x) => (x._id === u._id ? { ...x, isActive: !x.isActive } : x)));
+      setUsers((prev) =>
+        prev.map((x) => (x._id === u._id ? { ...x, isActive: !x.isActive } : x)),
+      );
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed');
+    } finally {
+      setWorking(null);
+    }
+  };
+
+  const handleToggleVerified = async (u: AdminUser) => {
+    const action = u.isVerified ? 'Unverify' : 'Verify';
+    if (!confirm(`${action} @${u.username}?`)) return;
+    setWorking(u._id);
+    try {
+      const updated = await setUserVerified(u._id, !u.isVerified);
+      setUsers((prev) =>
+        prev.map((x) =>
+          x._id === u._id ? { ...x, isVerified: updated.isVerified } : x,
+        ),
+      );
     } catch (err: any) {
       alert(err.response?.data?.message || 'Failed');
     } finally {
@@ -203,7 +229,7 @@ export default function AdminPage() {
             Admin access required
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-            Your account doesn't have admin privileges.
+            Your account doesn&apos;t have admin privileges.
           </p>
           <Link
             href="/"
@@ -235,12 +261,13 @@ export default function AdminPage() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Admin Panel</h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Moderation & management</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Moderation & management
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Tabs */}
         <div className="flex overflow-x-auto border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 sticky top-14 z-10">
           {tabs.map(({ key, label, Icon }) => (
             <button
@@ -259,7 +286,6 @@ export default function AdminPage() {
           ))}
         </div>
 
-        {/* OVERVIEW */}
         {tab === 'overview' && stats && (
           <div className="p-6 grid grid-cols-2 sm:grid-cols-3 gap-4">
             <StatCard label="Total users" value={stats.users.total} sub={`${stats.users.active} active`} color="text-blue-500" />
@@ -273,7 +299,6 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* USERS */}
         {tab === 'users' && (
           <div className="p-6">
             <div className="relative mb-4">
@@ -306,10 +331,14 @@ export default function AdminPage() {
                       </span>
                       {u.isVerified && <VerifiedBadge size="sm" />}
                       {u.role === 'admin' && (
-                        <span className="text-xs font-bold text-red-500 bg-red-50 dark:bg-red-950/40 px-1.5 py-0.5 rounded">ADMIN</span>
+                        <span className="text-xs font-bold text-red-500 bg-red-50 dark:bg-red-950/40 px-1.5 py-0.5 rounded">
+                          ADMIN
+                        </span>
                       )}
                       {!u.isActive && (
-                        <span className="text-xs font-bold text-gray-500 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">BANNED</span>
+                        <span className="text-xs font-bold text-gray-500 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">
+                          BANNED
+                        </span>
                       )}
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -317,6 +346,19 @@ export default function AdminPage() {
                     </p>
                   </div>
                   <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => handleToggleVerified(u)}
+                      disabled={working === u._id}
+                      className={
+                        'p-2 rounded-full transition ' +
+                        (u.isVerified
+                          ? 'text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/40'
+                          : 'text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 hover:text-blue-500')
+                      }
+                      title={u.isVerified ? 'Remove verification' : 'Verify user'}
+                    >
+                      <BadgeCheck className="w-4 h-4" />
+                    </button>
                     {u.role === 'admin' ? (
                       <button
                         onClick={() => handleSetRole(u, 'user')}
@@ -347,7 +389,11 @@ export default function AdminPage() {
                       }
                       title={u.isActive ? 'Ban user' : 'Unban user'}
                     >
-                      {u.isActive ? <Ban className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+                      {u.isActive ? (
+                        <Ban className="w-4 h-4" />
+                      ) : (
+                        <CheckCircle className="w-4 h-4" />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -359,7 +405,6 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* WINGS */}
         {tab === 'wings' && (
           <div className="p-6">
             <div className="relative mb-4">
@@ -382,9 +427,13 @@ export default function AdminPage() {
                 >
                   <div className="flex-1 min-w-0">
                     {w.title && (
-                      <p className="font-semibold text-gray-900 dark:text-white text-sm truncate">{w.title}</p>
+                      <p className="font-semibold text-gray-900 dark:text-white text-sm truncate">
+                        {w.title}
+                      </p>
                     )}
-                    <p className="text-sm text-gray-700 dark:text-gray-300 truncate">{w.content}</p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300 truncate">
+                      {w.content}
+                    </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       @{w.author?.username || 'unknown'} · {timeAgo(w.createdAt)} ·{' '}
                       {w.likesCount}❤ {w.commentsCount}💬 {w.views}👁
@@ -407,7 +456,6 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* COMMUNITIES */}
         {tab === 'communities' && (
           <div className="p-6 space-y-2">
             {communities.map((c) => (
@@ -442,7 +490,6 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* REPORTS */}
         {tab === 'reports' && (
           <div className="p-6">
             <div className="flex gap-2 mb-4">
@@ -532,8 +579,16 @@ export default function AdminPage() {
 }
 
 function StatCard({
-  label, value, sub, color,
-}: { label: string; value: number; sub?: string; color: string }) {
+  label,
+  value,
+  sub,
+  color,
+}: {
+  label: string;
+  value: number;
+  sub?: string;
+  color: string;
+}) {
   return (
     <div className="border border-gray-200 dark:border-gray-800 rounded-xl p-4">
       <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">{label}</p>

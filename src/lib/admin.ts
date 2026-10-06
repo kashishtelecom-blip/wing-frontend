@@ -1,3 +1,4 @@
+
 import api from './api';
 
 export interface AdminStats {
@@ -82,6 +83,11 @@ export async function setUserActive(userId: string, isActive: boolean) {
 
 export async function deleteUser(userId: string) {
   const res = await api.delete(`/admin/users/${userId}`);
+  return res.data;
+}
+
+export async function setUserVerified(userId: string, isVerified: boolean) {
+  const res = await api.patch(`/admin/users/${userId}/verified`, { isVerified });
   return res.data;
 }
 
