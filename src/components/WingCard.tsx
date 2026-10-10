@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  Heart, MessageCircle, Repeat2, Bookmark, Eye, MoreHorizontal, Trash2, Pin, AlertTriangle,
+  Heart, MessageCircle, Repeat2, Bookmark, Eye, MoreHorizontal, Trash2, Pin, AlertTriangle, Pencil,
 } from 'lucide-react';
 import api from '@/lib/api';
 import { Wing } from '@/lib/wings';
@@ -34,6 +34,15 @@ export function WingCard({ wing, onDeleted }: Props) {
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [showComments, setShowComments] = useState(false);
 
+  // ─── Edit state ───
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editTitle, setEditTitle] = useState(wing.title || '');
+  const [editContent, setEditContent] = useState(wing.content || '');
+  const [editSaving, setEditSaving] = useState(false);
+  const [displayTitle, setDisplayTitle] = useState(wing.title);
+  const [displayContent, setDisplayContent] = useState(wing.content);
+  const [editCount, setEditCount] = useState((wing as any).editCount || 0);
+
   const isAnonymous = (wing as any).isAnonymous;
   const hasAuthor = !!wing.author?._id;
 
@@ -46,7 +55,7 @@ export function WingCard({ wing, onDeleted }: Props) {
 
   const handleCardClick = (e: React.MouseEvent<HTMLElement>) => {
     const target = e.target as HTMLElement;
-    if (target.closest('button') || target.closest('a') || target.closest('video') || target.closest('form') || target.closest('input')) return;
+    if (target.closest('button') || target.closest('a') || target.closest('video') || target.closest('form') || target.closest('input') || target.closest('textarea')) return;
     router.push('/wing/' + wing._id);
   };
 
@@ -55,7 +64,6 @@ export function WingCard({ wing, onDeleted }: Props) {
     if (!user) return;
     const wasLiked = liked;
     const nowLiked = await toggleLike(wing._id);
-    // Only update count if state actually changed (avoids 409 double-counting)
     if (nowLiked !== wasLiked) {
       setLikesCount((c) => (nowLiked ? c + 1 : Math.max(0, c - 1)));
     }
@@ -95,6 +103,34 @@ export function WingCard({ wing, onDeleted }: Props) {
       alert('Wing pinned to your profile!');
       router.refresh();
     } catch (err) { console.error(err); }
+  };
+
+  const openEditDialog = (e: React.MouseEvent) => {
+    e.preventDefault(); e.stopPropagation();
+    setMenuOpen(false);
+    setEditTitle(displayTitle || '');
+    setEditContent(displayContent || '');
+    setShowEditDialog(true);
+  };
+
+  const handleSaveEdit = async () => {
+    setEditSaving(true);
+    try {
+      await api.patch('/wings/' + wing._id, {
+        title: editTitle,
+        content: editContent,
+      });
+      setDisplayTitle(editTitle);
+      setDisplayContent(editContent);
+      setEditCount((c) => c + 1);
+      setShowEditDialog(false);
+      router.refresh();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save changes. Try again.');
+    } finally {
+      setEditSaving(false);
+    }
   };
 
   return (
@@ -146,6 +182,14 @@ export function WingCard({ wing, onDeleted }: Props) {
                   <span className="text-gray-500 dark:text-gray-400">
                     {timeAgo(wing.createdAt)}
                   </span>
+                  {editCount > 0 && (
+                    <>
+                      <span className="text-gray-400">·</span>
+                      <span className="text-gray-500 dark:text-gray-400 text-xs italic">
+                        edited
+                      </span>
+                    </>
+                  )}
                   {(wing as any).scheduledAt && !wing.isPublished && (
                     <>
                       <span className="text-gray-400">·</span>
@@ -170,6 +214,12 @@ export function WingCard({ wing, onDeleted }: Props) {
                     <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 py-1 z-50">
                       {isOwner && (
                         <>
+                          <button
+                            onClick={openEditDialog}
+                            className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm text-gray-800 dark:text-gray-200"
+                          >
+                            <Pencil className="w-4 h-4" /> Edit
+                          </button>
                           <button
                             onClick={handlePin}
                             className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm text-gray-800 dark:text-gray-200"
@@ -202,13 +252,13 @@ export function WingCard({ wing, onDeleted }: Props) {
                 </div>
               </div>
 
-              {wing.title && (
+              {displayTitle && (
                 <h3 className="font-semibold text-gray-900 dark:text-white mt-1">
-                  {wing.title}
+                  {displayTitle}
                 </h3>
               )}
               <p className="text-gray-800 dark:text-gray-200 mt-1 whitespace-pre-wrap break-words">
-                <RichText text={wing.content} />
+                <RichText text={displayContent || ''} />
               </p>
 
               {wing.imageUrl && (
@@ -216,7 +266,7 @@ export function WingCard({ wing, onDeleted }: Props) {
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={getMediaUrl(wing.imageUrl)}
-                    alt={wing.title || 'Wing image'}
+                    alt={displayTitle || 'Wing image'}
                     className="w-full max-h-[500px] object-cover"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
@@ -320,6 +370,57 @@ export function WingCard({ wing, onDeleted }: Props) {
           wingId={wing._id}
           onClose={() => setShowReportDialog(false)}
         />
+      )}
+
+      {/* ─── Edit modal ─── */}
+      {showEditDialog && (
+        <div
+          className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4"
+          onClick={() => !editSaving && setShowEditDialog(false)}
+        >
+          <div
+            className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-lg p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              Edit Wing
+            </h2>
+            <input
+              type="text"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              placeholder="Title (optional)"
+              maxLength={120}
+              className="w-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg p-2 mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <textarea
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              placeholder="What's on your mind?"
+              maxLength={800}
+              className="w-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg p-2 mb-2 h-32 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <div className="text-right text-xs text-gray-500 dark:text-gray-400 mb-3">
+              {editContent.length} / 800
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowEditDialog(false)}
+                disabled={editSaving}
+                className="px-4 py-2 rounded-full text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                disabled={editSaving || !editContent.trim()}
+                className="px-5 py-2 rounded-full text-sm font-semibold bg-blue-500 text-white hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {editSaving ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );
