@@ -1,0 +1,89 @@
+{
+  "nav": {
+    "home": "होम",
+    "search": "खोज",
+    "explore": "एक्सप्लोर",
+    "trending": "ट्रेंडिंग",
+    "alerts": "सूचनाएँ",
+    "chat": "चैट",
+    "history": "इतिहास",
+    "profile": "प्रोफ़ाइल",
+    "more": "और"
+  },
+  "composer": {
+    "titlePlaceholder": "शीर्षक (वैकल्पिक)",
+    "bodyPlaceholder": "आप क्या सोच रहे हैं? #हैशटैग, @मेंशन और 😊 इमोजी का उपयोग करें",
+    "postButton": "पोस्ट करें",
+    "charLimit": "{count} / {max}",
+    "public": "सार्वजनिक",
+    "commentsOn": "टिप्पणियाँ चालू"
+  },
+  "auth": {
+    "login": "लॉग इन करें",
+    "signup": "साइन अप करें",
+    "email": "ईमेल",
+    "password": "पासवर्ड",
+    "username": "उपयोगकर्ता नाम",
+    "displayName": "प्रदर्शित नाम",
+    "welcomeBack": "वापसी पर स्वागत है",
+    "createAccount": "अपना खाता बनाएँ",
+    "noAccount": "खाता नहीं है?",
+    "haveAccount": "पहले से खाता है?",
+    "invalidCredentials": "गलत ईमेल या पासवर्ड",
+    "logout": "लॉग आउट करें"
+  },
+  "actions": {
+    "comment": "टिप्पणी",
+    "repost": "रीपोस्ट",
+    "like": "पसंद",
+    "bookmark": "बुकमार्क",
+    "share": "साझा करें",
+    "views": "व्यूज़",
+    "edit": "संपादित करें",
+    "delete": "हटाएँ",
+    "pin": "प्रोफ़ाइल पर पिन करें",
+    "report": "कॉपीराइट की शिकायत करें",
+    "save": "सहेजें",
+    "cancel": "रद्द करें",
+    "confirm": "पुष्टि करें",
+    "deleteConfirm": "क्या इस विंग को हटाना है?",
+    "edited": "संपादित"
+  },
+  "profile": {
+    "followers": "फ़ॉलोअर",
+    "following": "फ़ॉलोइंग",
+    "wings": "विंग्स",
+    "follow": "फ़ॉलो करें",
+    "unfollow": "अनफ़ॉलो करें",
+    "editProfile": "प्रोफ़ाइल संपादित करें",
+    "noWings": "अभी तक कोई विंग नहीं।"
+  },
+  "notifications": {
+    "title": "सूचनाएँ",
+    "empty": "अभी तक कोई सूचना नहीं",
+    "liked": "ने आपकी विंग पसंद की",
+    "commented": "ने आपकी विंग पर टिप्पणी की",
+    "followed": "ने आपको फ़ॉलो किया",
+    "reposted": "ने आपकी विंग रीपोस्ट की"
+  },
+  "chat": {
+    "title": "चैट",
+    "startMessage": "नया संदेश शुरू करें",
+    "typeMessage": "संदेश लिखें...",
+    "send": "भेजें",
+    "online": "ऑनलाइन",
+    "typing": "टाइप कर रहे हैं...",
+    "noConversations": "अभी तक कोई बातचीत नहीं"
+  },
+  "feed": {
+    "forYou": "आपके लिए",
+    "following": "फ़ॉलोइंग",
+    "caughtUp": "आप सब देख चुके हैं",
+    "whoToFollow": "किसे फ़ॉलो करें",
+    "showMore": "और दिखाएँ"
+  },
+  "language": {
+    "select": "भाषा",
+    "changed": "भाषा बदली गई"
+  }
+}

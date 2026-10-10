@@ -1,13 +1,14 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
+import { NextIntlClientProvider } from 'next-intl';
+import { getLocale, getMessages } from 'next-intl/server';
 import { AuthProvider } from '@/lib/auth-context';
 import { SocketProvider } from '@/lib/socket-context';
 import { InteractionsProvider } from '@/lib/user-interactions';
 import { ThemeProvider } from '@/lib/theme';
 import { Footer } from '@/components/Footer';
 import { PwaProvider } from '@/components/PwaProvider';
-
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -87,9 +88,12 @@ export const viewport: Viewport = {
   maximumScale: 5,
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -99,19 +103,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className={inter.className + ' bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100'}>
-        <PwaProvider />  
-         <ThemeProvider>
-          <AuthProvider>
-             <SocketProvider>
-            <InteractionsProvider>
-              <div className="min-h-screen flex flex-col">
-                <div className="flex-1">{children}</div>
-                <Footer />
-              </div>
-            </InteractionsProvider>
-            </SocketProvider>
-          </AuthProvider>
-        </ThemeProvider>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <PwaProvider />
+          <ThemeProvider>
+            <AuthProvider>
+              <SocketProvider>
+                <InteractionsProvider>
+                  <div className="min-h-screen flex flex-col">
+                    <div className="flex-1">{children}</div>
+                    <Footer />
+                  </div>
+                </InteractionsProvider>
+              </SocketProvider>
+            </AuthProvider>
+          </ThemeProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

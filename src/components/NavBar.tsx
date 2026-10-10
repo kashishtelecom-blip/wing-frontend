@@ -13,6 +13,7 @@ import { useSocket } from '@/lib/socket-context';
 import { getUnreadCount } from '@/lib/notifications';
 import { MoreMenu } from './MoreMenu';
 import { VerifiedBadge } from './VerifiedBadge';
+import { LanguageSwitcher } from './LanguageSwitcher';
 import api from '@/lib/api';
 import { getMediaUrl } from '@/lib/media';
 
@@ -26,7 +27,6 @@ export function NavBar() {
   const [avatarUrl, setAvatarUrl] = useState('');
   const [isVerified, setIsVerified] = useState(false);
 
-  // Poll unread counts (fallback if socket fails)
   useEffect(() => {
     if (!user?.userId) return;
 
@@ -63,7 +63,6 @@ export function NavBar() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.userId, pathname]);
 
-  // 🔌 Real-time notification listener
   useEffect(() => {
     if (!socket || !user?.userId) return;
 
@@ -167,6 +166,7 @@ export function NavBar() {
         </nav>
 
         <div className="flex items-center gap-1.5 flex-shrink-0">
+          <LanguageSwitcher />
           <button
             onClick={toggleTheme}
             className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition"

@@ -1,0 +1,89 @@
+{
+  "nav": {
+    "home": "હોમ",
+    "search": "શોધો",
+    "explore": "એક્સપ્લોર",
+    "trending": "ટ્રેન્ડિંગ",
+    "alerts": "સૂચનાઓ",
+    "chat": "ચેટ",
+    "history": "ઇતિહાસ",
+    "profile": "પ્રોફાઇલ",
+    "more": "વધુ"
+  },
+  "composer": {
+    "titlePlaceholder": "શીર્ષક (વૈકલ્પિક)",
+    "bodyPlaceholder": "તમે શું વિચારો છો? #હેશટેગ, @મેન્શન અને 😊 ઇમોજીનો ઉપયોગ કરો",
+    "postButton": "પોસ્ટ કરો",
+    "charLimit": "{count} / {max}",
+    "public": "જાહેર",
+    "commentsOn": "ટિપ્પણીઓ ચાલુ"
+  },
+  "auth": {
+    "login": "લોગ ઇન",
+    "signup": "સાઇન અપ",
+    "email": "ઇમેઇલ",
+    "password": "પાસવર્ડ",
+    "username": "વપરાશકર્તાનામ",
+    "displayName": "પ્રદર્શન નામ",
+    "welcomeBack": "પુનઃ સ્વાગત",
+    "createAccount": "તમારું ખાતું બનાવો",
+    "noAccount": "ખાતું નથી?",
+    "haveAccount": "પહેલેથી ખાતું છે?",
+    "invalidCredentials": "ખોટો ઇમેઇલ અથવા પાસવર્ડ",
+    "logout": "લોગ આઉટ"
+  },
+  "actions": {
+    "comment": "ટિપ્પણી",
+    "repost": "રીપોસ્ટ",
+    "like": "ગમ્યું",
+    "bookmark": "બુકમાર્ક",
+    "share": "શેર કરો",
+    "views": "વ્યુઝ",
+    "edit": "સંપાદિત કરો",
+    "delete": "કાઢી નાખો",
+    "pin": "પ્રોફાઇલ પર પિન કરો",
+    "report": "કૉપીરાઇટ રિપોર્ટ",
+    "save": "સાચવો",
+    "cancel": "રદ કરો",
+    "confirm": "પુષ્ટિ કરો",
+    "deleteConfirm": "આ વિંગ કાઢી નાખવી?",
+    "edited": "સંપાદિત"
+  },
+  "profile": {
+    "followers": "ફોલોઅર્સ",
+    "following": "ફોલોઇંગ",
+    "wings": "વિંગ્સ",
+    "follow": "ફોલો કરો",
+    "unfollow": "અનફોલો",
+    "editProfile": "પ્રોફાઇલ સંપાદિત કરો",
+    "noWings": "હજી કોઈ વિંગ નથી."
+  },
+  "notifications": {
+    "title": "સૂચનાઓ",
+    "empty": "હજી કોઈ સૂચના નથી",
+    "liked": "તમારી વિંગ ગમી",
+    "commented": "તમારી વિંગ પર ટિપ્પણી કરી",
+    "followed": "તમને ફોલો કર્યા",
+    "reposted": "તમારી વિંગ રીપોસ્ટ કરી"
+  },
+  "chat": {
+    "title": "ચેટ",
+    "startMessage": "નવો સંદેશ શરૂ કરો",
+    "typeMessage": "સંદેશ લખો...",
+    "send": "મોકલો",
+    "online": "ઓનલાઇન",
+    "typing": "ટાઇપ કરી રહ્યા છે...",
+    "noConversations": "હજી કોઈ વાતચીત નથી"
+  },
+  "feed": {
+    "forYou": "તમારા માટે",
+    "following": "ફોલોઇંગ",
+    "caughtUp": "તમે બધું જોઈ લીધું",
+    "whoToFollow": "કોને ફોલો કરવું",
+    "showMore": "વધુ બતાવો"
+  },
+  "language": {
+    "select": "ભાષા",
+    "changed": "ભાષા બદલાઈ"
+  }
+}

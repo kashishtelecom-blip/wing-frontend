@@ -1,0 +1,89 @@
+{
+  "nav": {
+    "home": "Home",
+    "search": "Search",
+    "explore": "Explore",
+    "trending": "Trending",
+    "alerts": "Alerts",
+    "chat": "Chat",
+    "history": "History",
+    "profile": "Profile",
+    "more": "More"
+  },
+  "composer": {
+    "titlePlaceholder": "Title (optional)",
+    "bodyPlaceholder": "What's on your mind? Use #hashtags, @mentions and 😊 emojis",
+    "postButton": "Post",
+    "charLimit": "{count} / {max}",
+    "public": "Public",
+    "commentsOn": "Comments on"
+  },
+  "auth": {
+    "login": "Log in",
+    "signup": "Sign up",
+    "email": "Email",
+    "password": "Password",
+    "username": "Username",
+    "displayName": "Display name",
+    "welcomeBack": "Welcome back",
+    "createAccount": "Create your account",
+    "noAccount": "Don't have an account?",
+    "haveAccount": "Already have an account?",
+    "invalidCredentials": "Invalid credentials",
+    "logout": "Log out"
+  },
+  "actions": {
+    "comment": "Comment",
+    "repost": "Repost",
+    "like": "Like",
+    "bookmark": "Bookmark",
+    "share": "Share",
+    "views": "Views",
+    "edit": "Edit",
+    "delete": "Delete",
+    "pin": "Pin to profile",
+    "report": "Report copyright",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "deleteConfirm": "Delete this wing?",
+    "edited": "edited"
+  },
+  "profile": {
+    "followers": "Followers",
+    "following": "Following",
+    "wings": "Wings",
+    "follow": "Follow",
+    "unfollow": "Unfollow",
+    "editProfile": "Edit profile",
+    "noWings": "No wings yet."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No notifications yet",
+    "liked": "liked your wing",
+    "commented": "commented on your wing",
+    "followed": "followed you",
+    "reposted": "reposted your wing"
+  },
+  "chat": {
+    "title": "Chat",
+    "startMessage": "Start a new message",
+    "typeMessage": "Type a message...",
+    "send": "Send",
+    "online": "Online",
+    "typing": "typing...",
+    "noConversations": "No conversations yet"
+  },
+  "feed": {
+    "forYou": "For you",
+    "following": "Following",
+    "caughtUp": "You're all caught up",
+    "whoToFollow": "Who to follow",
+    "showMore": "Show more"
+  },
+  "language": {
+    "select": "Language",
+    "changed": "Language changed"
+  }
+}

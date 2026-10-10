@@ -1,0 +1,89 @@
+{
+  "nav": {
+    "home": "ਹੋਮ",
+    "search": "ਖੋਜ",
+    "explore": "ਐਕਸਪਲੋਰ",
+    "trending": "ਟ੍ਰੈਂਡਿੰਗ",
+    "alerts": "ਸੂਚਨਾਵਾਂ",
+    "chat": "ਚੈਟ",
+    "history": "ਇਤਿਹਾਸ",
+    "profile": "ਪ੍ਰੋਫਾਈਲ",
+    "more": "ਹੋਰ"
+  },
+  "composer": {
+    "titlePlaceholder": "ਸਿਰਲੇਖ (ਵਿਕਲਪਿਕ)",
+    "bodyPlaceholder": "ਤੁਸੀਂ ਕੀ ਸੋਚ ਰਹੇ ਹੋ? #ਹੈਸ਼ਟੈਗ, @ਮੈਂਸ਼ਨ ਅਤੇ 😊 ਇਮੋਜੀ ਵਰਤੋ",
+    "postButton": "ਪੋਸਟ ਕਰੋ",
+    "charLimit": "{count} / {max}",
+    "public": "ਜਨਤਕ",
+    "commentsOn": "ਟਿੱਪਣੀਆਂ ਚਾਲੂ"
+  },
+  "auth": {
+    "login": "ਲੌਗ ਇਨ",
+    "signup": "ਸਾਈਨ ਅੱਪ",
+    "email": "ਈਮੇਲ",
+    "password": "ਪਾਸਵਰਡ",
+    "username": "ਯੂਜ਼ਰਨੇਮ",
+    "displayName": "ਪ੍ਰਦਰਸ਼ਿਤ ਨਾਮ",
+    "welcomeBack": "ਜੀ ਆਇਆਂ ਨੂੰ",
+    "createAccount": "ਆਪਣਾ ਖਾਤਾ ਬਣਾਓ",
+    "noAccount": "ਖਾਤਾ ਨਹੀਂ ਹੈ?",
+    "haveAccount": "ਪਹਿਲਾਂ ਹੀ ਖਾਤਾ ਹੈ?",
+    "invalidCredentials": "ਗਲਤ ਈਮੇਲ ਜਾਂ ਪਾਸਵਰਡ",
+    "logout": "ਲੌਗ ਆਉਟ"
+  },
+  "actions": {
+    "comment": "ਟਿੱਪਣੀ",
+    "repost": "ਰੀਪੋਸਟ",
+    "like": "ਪਸੰਦ",
+    "bookmark": "ਬੁੱਕਮਾਰਕ",
+    "share": "ਸ਼ੇਅਰ ਕਰੋ",
+    "views": "ਵਿਊਜ਼",
+    "edit": "ਸੰਪਾਦਿਤ ਕਰੋ",
+    "delete": "ਮਿਟਾਓ",
+    "pin": "ਪ੍ਰੋਫਾਈਲ 'ਤੇ ਪਿੰਨ ਕਰੋ",
+    "report": "ਕਾਪੀਰਾਈਟ ਰਿਪੋਰਟ",
+    "save": "ਸੰਭਾਲੋ",
+    "cancel": "ਰੱਦ ਕਰੋ",
+    "confirm": "ਪੁਸ਼ਟੀ ਕਰੋ",
+    "deleteConfirm": "ਇਸ ਵਿੰਗ ਨੂੰ ਮਿਟਾਉਣਾ?",
+    "edited": "ਸੰਪਾਦਿਤ"
+  },
+  "profile": {
+    "followers": "ਫਾਲੋਅਰਜ਼",
+    "following": "ਫਾਲੋਇੰਗ",
+    "wings": "ਵਿੰਗਜ਼",
+    "follow": "ਫਾਲੋ ਕਰੋ",
+    "unfollow": "ਅਨਫਾਲੋ",
+    "editProfile": "ਪ੍ਰੋਫਾਈਲ ਸੰਪਾਦਿਤ ਕਰੋ",
+    "noWings": "ਅਜੇ ਕੋਈ ਵਿੰਗ ਨਹੀਂ।"
+  },
+  "notifications": {
+    "title": "ਸੂਚਨਾਵਾਂ",
+    "empty": "ਅਜੇ ਕੋਈ ਸੂਚਨਾ ਨਹੀਂ",
+    "liked": "ਤੁਹਾਡੀ ਵਿੰਗ ਪਸੰਦ ਕੀਤੀ",
+    "commented": "ਤੁਹਾਡੀ ਵਿੰਗ 'ਤੇ ਟਿੱਪਣੀ ਕੀਤੀ",
+    "followed": "ਤੁਹਾਨੂੰ ਫਾਲੋ ਕੀਤਾ",
+    "reposted": "ਤੁਹਾਡੀ ਵਿੰਗ ਰੀਪੋਸਟ ਕੀਤੀ"
+  },
+  "chat": {
+    "title": "ਚੈਟ",
+    "startMessage": "ਨਵਾਂ ਸੁਨੇਹਾ ਸ਼ੁਰੂ ਕਰੋ",
+    "typeMessage": "ਸੁਨੇਹਾ ਟਾਈਪ ਕਰੋ...",
+    "send": "ਭੇਜੋ",
+    "online": "ਆਨਲਾਈਨ",
+    "typing": "ਟਾਈਪ ਕਰ ਰਹੇ ਹਨ...",
+    "noConversations": "ਅਜੇ ਕੋਈ ਗੱਲਬਾਤ ਨਹੀਂ"
+  },
+  "feed": {
+    "forYou": "ਤੁਹਾਡੇ ਲਈ",
+    "following": "ਫਾਲੋਇੰਗ",
+    "caughtUp": "ਸਭ ਦੇਖ ਲਿਆ",
+    "whoToFollow": "ਕਿਸਨੂੰ ਫਾਲੋ ਕਰੀਏ",
+    "showMore": "ਹੋਰ ਦਿਖਾਓ"
+  },
+  "language": {
+    "select": "ਭਾਸ਼ਾ",
+    "changed": "ਭਾਸ਼ਾ ਬਦਲੀ ਗਈ"
+  }
+}

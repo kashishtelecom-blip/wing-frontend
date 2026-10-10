@@ -1,0 +1,89 @@
+{
+  "nav": {
+    "home": "होम",
+    "search": "शोध",
+    "explore": "एक्सप्लोर",
+    "trending": "ट्रेंडिंग",
+    "alerts": "सूचना",
+    "chat": "चॅट",
+    "history": "इतिहास",
+    "profile": "प्रोफाइल",
+    "more": "अधिक"
+  },
+  "composer": {
+    "titlePlaceholder": "शीर्षक (ऐच्छिक)",
+    "bodyPlaceholder": "तुम्हाला काय वाटतं? #हॅशटॅग, @मेंशन आणि 😊 इमोजी वापरा",
+    "postButton": "पोस्ट करा",
+    "charLimit": "{count} / {max}",
+    "public": "सार्वजनिक",
+    "commentsOn": "टिप्पण्या सुरू"
+  },
+  "auth": {
+    "login": "लॉग इन करा",
+    "signup": "साइन अप करा",
+    "email": "ईमेल",
+    "password": "पासवर्ड",
+    "username": "वापरकर्तानाव",
+    "displayName": "प्रदर्शित नाव",
+    "welcomeBack": "पुन्हा स्वागत आहे",
+    "createAccount": "तुमचे खाते तयार करा",
+    "noAccount": "खाते नाही?",
+    "haveAccount": "आधीच खाते आहे?",
+    "invalidCredentials": "चुकीचा ईमेल किंवा पासवर्ड",
+    "logout": "लॉग आउट करा"
+  },
+  "actions": {
+    "comment": "टिप्पणी",
+    "repost": "रीपोस्ट",
+    "like": "आवडले",
+    "bookmark": "बुकमार्क",
+    "share": "शेअर करा",
+    "views": "व्ह्यूज",
+    "edit": "संपादित करा",
+    "delete": "हटवा",
+    "pin": "प्रोफाइलवर पिन करा",
+    "report": "कॉपीराइट तक्रार करा",
+    "save": "जतन करा",
+    "cancel": "रद्द करा",
+    "confirm": "पुष्टी करा",
+    "deleteConfirm": "ही विंग हटवायची?",
+    "edited": "संपादित"
+  },
+  "profile": {
+    "followers": "फॉलोअर्स",
+    "following": "फॉलोइंग",
+    "wings": "विंग्स",
+    "follow": "फॉलो करा",
+    "unfollow": "अनफॉलो करा",
+    "editProfile": "प्रोफाइल संपादित करा",
+    "noWings": "अजून विंग नाही."
+  },
+  "notifications": {
+    "title": "सूचना",
+    "empty": "अजून सूचना नाहीत",
+    "liked": "यांनी तुमची विंग आवडली",
+    "commented": "यांनी तुमच्या विंगवर टिप्पणी केली",
+    "followed": "यांनी तुम्हाला फॉलो केले",
+    "reposted": "यांनी तुमची विंग रीपोस्ट केली"
+  },
+  "chat": {
+    "title": "चॅट",
+    "startMessage": "नवीन संदेश सुरू करा",
+    "typeMessage": "संदेश लिहा...",
+    "send": "पाठवा",
+    "online": "ऑनलाइन",
+    "typing": "टाइप करत आहे...",
+    "noConversations": "अजून संभाषण नाही"
+  },
+  "feed": {
+    "forYou": "तुमच्यासाठी",
+    "following": "फॉलोइंग",
+    "caughtUp": "तुम्ही सर्व पाहिले आहे",
+    "whoToFollow": "कोणाला फॉलो करावे",
+    "showMore": "अधिक दाखवा"
+  },
+  "language": {
+    "select": "भाषा",
+    "changed": "भाषा बदलली"
+  }
+}

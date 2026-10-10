@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { Image as ImageIcon, Video, X, Smile, Clock } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { createWing, uploadMedia } from '@/lib/wings';
 import { useAuth } from '@/lib/auth-context';
 import { EmojiPicker } from './EmojiPicker';
@@ -14,6 +15,7 @@ const IMAGE_MAX = 5 * 1024 * 1024;
 const VIDEO_MAX = 50 * 1024 * 1024;
 
 export function PostComposer({ onPosted }: Props) {
+  const t = useTranslations('composer');
   const { user } = useAuth();
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -122,7 +124,7 @@ export function PostComposer({ onPosted }: Props) {
         <div className="flex-1 min-w-0">
           <input
             type="text"
-            placeholder="Title (optional)"
+            placeholder={t('titlePlaceholder')}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             className="w-full text-lg font-semibold placeholder-gray-400 dark:placeholder-gray-500 dark:text-white bg-transparent outline-none mb-1"
@@ -130,7 +132,7 @@ export function PostComposer({ onPosted }: Props) {
           />
           <textarea
             ref={textareaRef}
-            placeholder="What's on your mind? Use #hashtags, @mentions and 😀 emojis (up to 800 chars)"
+            placeholder={t('bodyPlaceholder')}
             value={content}
             onChange={(e) => setContent(e.target.value)}
             className="w-full resize-none outline-none text-gray-800 dark:text-gray-100 dark:placeholder-gray-500 bg-transparent placeholder-gray-400"
@@ -255,7 +257,7 @@ export function PostComposer({ onPosted }: Props) {
                 }
                 title="Post anonymously"
               >
-                🎭 {isAnonymous ? 'Anon' : 'Public'}
+                🎭 {isAnonymous ? 'Anon' : t('public')}
               </button>
 
               <button
@@ -296,7 +298,7 @@ export function PostComposer({ onPosted }: Props) {
               disabled={loading || !content.trim()}
               className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-1.5 px-6 rounded-full transition disabled:opacity-50 flex-shrink-0 self-end sm:self-auto order-1 sm:order-2"
             >
-              {loading ? 'Posting...' : scheduledAt ? 'Schedule' : 'Post'}
+              {loading ? 'Posting...' : scheduledAt ? 'Schedule' : t('postButton')}
             </button>
           </div>
         </div>

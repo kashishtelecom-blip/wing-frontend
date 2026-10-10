@@ -1,0 +1,89 @@
+{
+  "nav": {
+    "home": "হোম",
+    "search": "খুঁজুন",
+    "explore": "এক্সপ্লোর",
+    "trending": "ট্রেন্ডিং",
+    "alerts": "বিজ্ঞপ্তি",
+    "chat": "চ্যাট",
+    "history": "ইতিহাস",
+    "profile": "প্রোফাইল",
+    "more": "আরও"
+  },
+  "composer": {
+    "titlePlaceholder": "শিরোনাম (ঐচ্ছিক)",
+    "bodyPlaceholder": "আপনি কী ভাবছেন? #হ্যাশট্যাগ, @মেনশন এবং 😊 ইমোজি ব্যবহার করুন",
+    "postButton": "পোস্ট করুন",
+    "charLimit": "{count} / {max}",
+    "public": "পাবলিক",
+    "commentsOn": "মন্তব্য চালু"
+  },
+  "auth": {
+    "login": "লগ ইন",
+    "signup": "সাইন আপ",
+    "email": "ইমেইল",
+    "password": "পাসওয়ার্ড",
+    "username": "ইউজারনেম",
+    "displayName": "প্রদর্শিত নাম",
+    "welcomeBack": "স্বাগতম",
+    "createAccount": "আপনার অ্যাকাউন্ট তৈরি করুন",
+    "noAccount": "অ্যাকাউন্ট নেই?",
+    "haveAccount": "ইতিমধ্যে অ্যাকাউন্ট আছে?",
+    "invalidCredentials": "ভুল ইমেইল বা পাসওয়ার্ড",
+    "logout": "লগ আউট"
+  },
+  "actions": {
+    "comment": "মন্তব্য",
+    "repost": "রিপোস্ট",
+    "like": "পছন্দ",
+    "bookmark": "বুকমার্ক",
+    "share": "শেয়ার",
+    "views": "ভিউ",
+    "edit": "সম্পাদনা",
+    "delete": "মুছুন",
+    "pin": "প্রোফাইলে পিন করুন",
+    "report": "কপিরাইট রিপোর্ট",
+    "save": "সংরক্ষণ",
+    "cancel": "বাতিল",
+    "confirm": "নিশ্চিত করুন",
+    "deleteConfirm": "এই উইংটি মুছবেন?",
+    "edited": "সম্পাদিত"
+  },
+  "profile": {
+    "followers": "ফলোয়ার",
+    "following": "ফলোয়িং",
+    "wings": "উইংস",
+    "follow": "ফলো",
+    "unfollow": "আনফলো",
+    "editProfile": "প্রোফাইল সম্পাদনা",
+    "noWings": "এখনও কোনও উইং নেই।"
+  },
+  "notifications": {
+    "title": "বিজ্ঞপ্তি",
+    "empty": "এখনও কোনও বিজ্ঞপ্তি নেই",
+    "liked": "আপনার উইং পছন্দ করেছেন",
+    "commented": "আপনার উইংয়ে মন্তব্য করেছেন",
+    "followed": "আপনাকে ফলো করেছেন",
+    "reposted": "আপনার উইং রিপোস্ট করেছেন"
+  },
+  "chat": {
+    "title": "চ্যাট",
+    "startMessage": "নতুন বার্তা শুরু করুন",
+    "typeMessage": "বার্তা টাইপ করুন...",
+    "send": "পাঠান",
+    "online": "অনলাইন",
+    "typing": "টাইপ করছেন...",
+    "noConversations": "এখনও কোনও কথোপকথন নেই"
+  },
+  "feed": {
+    "forYou": "আপনার জন্য",
+    "following": "ফলোয়িং",
+    "caughtUp": "আপনি সব দেখে ফেলেছেন",
+    "whoToFollow": "কাকে ফলো করবেন",
+    "showMore": "আরও দেখান"
+  },
+  "language": {
+    "select": "ভাষা",
+    "changed": "ভাষা পরিবর্তিত"
+  }
+}
