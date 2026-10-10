@@ -41,7 +41,7 @@ export function WingCard({ wing, onDeleted }: Props) {
   const [editSaving, setEditSaving] = useState(false);
   const [displayTitle, setDisplayTitle] = useState(wing.title);
   const [displayContent, setDisplayContent] = useState(wing.content);
-  const [editCount, setEditCount] = useState((wing as any).editCount || 0);
+  const [editCount, setEditCount] = useState<number>((wing as any).editCount || 0);
 
   const isAnonymous = (wing as any).isAnonymous;
   const hasAuthor = !!wing.author?._id;
