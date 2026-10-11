@@ -26,7 +26,7 @@ export function LanguageSwitcher() {
 
   const change = (code: string) => {
     document.cookie = `locale=${code};path=/;max-age=31536000;SameSite=Lax`;
-    setLocale(code);                 // ← update label immediately
+    setLocale(code);                 // ← instant label update
     startTransition(() => router.refresh());
   };
 
