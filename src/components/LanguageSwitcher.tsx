@@ -1,32 +1,32 @@
 'use client';
 
+import { useState, useTransition } from 'react';
 import { useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useTransition } from 'react';
 import { Globe } from 'lucide-react';
 
 const LANGUAGES = [
-  { code: 'en', label: 'English',  native: 'English'   },
-  { code: 'hi', label: 'Hindi',    native: 'हिन्दी'      },
-  { code: 'mr', label: 'Marathi',  native: 'मराठी'       },
-  { code: 'ta', label: 'Tamil',    native: 'தமிழ்'       },
-  { code: 'te', label: 'Telugu',   native: 'తెలుగు'      },
-  { code: 'bn', label: 'Bengali',  native: 'বাংলা'       },
-  { code: 'gu', label: 'Gujarati', native: 'ગુજરાતી'     },
-  { code: 'kn', label: 'Kannada',  native: 'ಕನ್ನಡ'       },
-  { code: 'ml', label: 'Malayalam',native: 'മലയാളം'      },
-  { code: 'pa', label: 'Punjabi',  native: 'ਪੰਜਾਬੀ'      },
+  { code: 'en', native: 'English'   },
+  { code: 'hi', native: 'हिन्दी'      },
+  { code: 'mr', native: 'मराठी'       },
+  { code: 'ta', native: 'தமிழ்'       },
+  { code: 'te', native: 'తెలుగు'      },
+  { code: 'bn', native: 'বাংলা'       },
+  { code: 'gu', native: 'ગુજરાતી'     },
+  { code: 'kn', native: 'ಕನ್ನಡ'       },
+  { code: 'ml', native: 'മലയാളം'      },
+  { code: 'pa', native: 'ਪੰਜਾਬੀ'      },
 ] as const;
 
 export function LanguageSwitcher() {
-  const locale = useLocale();
+  const localeFromHook = useLocale();
+  const [locale, setLocale] = useState<string>(localeFromHook);
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
   const change = (code: string) => {
-    // Persist choice for 1 year
     document.cookie = `locale=${code};path=/;max-age=31536000;SameSite=Lax`;
-    // Re-render server components with the new locale
+    setLocale(code);                 // ← update label immediately
     startTransition(() => router.refresh());
   };
 
