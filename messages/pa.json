@@ -8,7 +8,18 @@
     "chat": "ਚੈਟ",
     "history": "ਇਤਿਹਾਸ",
     "profile": "ਪ੍ਰੋਫਾਈਲ",
-    "more": "ਹੋਰ"
+    "more": "ਹੋਰ",
+    "bookmarks": "ਬੁੱਕਮਾਰਕ",
+    "lists": "ਸੂਚੀਆਂ",
+    "communities": "ਕਮਿਊਨਿਟੀਆਂ",
+    "creator": "ਕ੍ਰਿਏਟਰ ਸਟੂਡੀਓ",
+    "business": "ਕਾਰੋਬਾਰ",
+    "ads": "ਇਸ਼ਤਿਹਾਰ",
+    "spaces": "ਆਪਣੀ ਸਪੇਸ ਬਣਾਓ",
+    "invite": "ਦੋਸਤਾਂ ਨੂੰ ਸੱਦਾ ਦਿਓ",
+    "settings": "ਸੈਟਿੰਗਾਂ ਅਤੇ ਗੋਪਨੀਯਤਾ",
+    "getVerified": "ਵੈਰੀਫਾਈਡ ਬਣੋ",
+    "adminPanel": "ਐਡਮਿਨ ਪੈਨਲ"
   },
   "composer": {
     "titlePlaceholder": "ਸਿਰਲੇਖ (ਵਿਕਲਪਿਕ)",
@@ -30,7 +41,12 @@
     "noAccount": "ਖਾਤਾ ਨਹੀਂ ਹੈ?",
     "haveAccount": "ਪਹਿਲਾਂ ਹੀ ਖਾਤਾ ਹੈ?",
     "invalidCredentials": "ਗਲਤ ਈਮੇਲ ਜਾਂ ਪਾਸਵਰਡ",
-    "logout": "ਲੌਗ ਆਉਟ"
+    "logout": "ਲੌਗ ਆਉਟ",
+    "loggingIn": "ਲੌਗ ਇਨ ਹੋ ਰਿਹਾ ਹੈ...",
+    "creatingAccount": "ਖਾਤਾ ਬਣਾਇਆ ਜਾ ਰਿਹਾ ਹੈ...",
+    "loginFailed": "ਲੌਗ ਇਨ ਅਸਫਲ",
+    "registrationFailed": "ਰਜਿਸਟ੍ਰੇਸ਼ਨ ਅਸਫਲ",
+    "passwordHint": "ਘੱਟੋ-ਘੱਟ 6 ਅੱਖਰ"
   },
   "actions": {
     "comment": "ਟਿੱਪਣੀ",
@@ -56,7 +72,8 @@
     "follow": "ਫਾਲੋ ਕਰੋ",
     "unfollow": "ਅਨਫਾਲੋ",
     "editProfile": "ਪ੍ਰੋਫਾਈਲ ਸੰਪਾਦਿਤ ਕਰੋ",
-    "noWings": "ਅਜੇ ਕੋਈ ਵਿੰਗ ਨਹੀਂ।"
+    "noWings": "ਅਜੇ ਕੋਈ ਵਿੰਗ ਨਹੀਂ।",
+    "pinnedWing": "ਪਿੰਨ ਕੀਤੀ ਵਿੰਗ"
   },
   "notifications": {
     "title": "ਸੂਚਨਾਵਾਂ",
@@ -64,9 +81,10 @@
     "liked": "ਤੁਹਾਡੀ ਵਿੰਗ ਪਸੰਦ ਕੀਤੀ",
     "commented": "ਤੁਹਾਡੀ ਵਿੰਗ 'ਤੇ ਟਿੱਪਣੀ ਕੀਤੀ",
     "followed": "ਤੁਹਾਨੂੰ ਫਾਲੋ ਕੀਤਾ",
-    "reposted": "ਤੁਹਾਡੀ ਵਿੰਗ ਰੀਪੋਸਟ ਕੀਤੀ"
+    "reposted": "ਤੁਹਾਡੀ ਵਿੰਗ ਰੀਪੋਸਟ ਕੀਤੀ",
+    "mentioned": "ਤੁਹਾਡਾ ਜ਼ਿਕਰ ਕੀਤਾ"
   },
-    "chat": {
+  "chat": {
     "title": "ਚੈਟ",
     "startMessage": "ਨਵਾਂ ਸੁਨੇਹਾ ਸ਼ੁਰੂ ਕਰੋ",
     "typeMessage": "ਸੁਨੇਹਾ ਟਾਈਪ ਕਰੋ...",

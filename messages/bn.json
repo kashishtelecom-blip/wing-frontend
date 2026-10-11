@@ -8,7 +8,18 @@
     "chat": "চ্যাট",
     "history": "ইতিহাস",
     "profile": "প্রোফাইল",
-    "more": "আরও"
+    "more": "আরও",
+    "bookmarks": "বুকমার্ক",
+    "lists": "তালিকা",
+    "communities": "সম্প্রদায়",
+    "creator": "ক্রিয়েটর স্টুডিও",
+    "business": "ব্যবসা",
+    "ads": "বিজ্ঞাপন",
+    "spaces": "আপনার স্পেস তৈরি করুন",
+    "invite": "বন্ধুদের আমন্ত্রণ জানান",
+    "settings": "সেটিংস এবং গোপনীয়তা",
+    "getVerified": "যাচাই করুন",
+    "adminPanel": "অ্যাডমিন প্যানেল"
   },
   "composer": {
     "titlePlaceholder": "শিরোনাম (ঐচ্ছিক)",
@@ -30,7 +41,12 @@
     "noAccount": "অ্যাকাউন্ট নেই?",
     "haveAccount": "ইতিমধ্যে অ্যাকাউন্ট আছে?",
     "invalidCredentials": "ভুল ইমেইল বা পাসওয়ার্ড",
-    "logout": "লগ আউট"
+    "logout": "লগ আউট",
+    "loggingIn": "লগ ইন হচ্ছে...",
+    "creatingAccount": "অ্যাকাউন্ট তৈরি হচ্ছে...",
+    "loginFailed": "লগ ইন ব্যর্থ",
+    "registrationFailed": "নিবন্ধন ব্যর্থ",
+    "passwordHint": "কমপক্ষে ৬টি অক্ষর"
   },
   "actions": {
     "comment": "মন্তব্য",
@@ -56,7 +72,8 @@
     "follow": "ফলো",
     "unfollow": "আনফলো",
     "editProfile": "প্রোফাইল সম্পাদনা",
-    "noWings": "এখনও কোনও উইং নেই।"
+    "noWings": "এখনও কোনও উইং নেই।",
+    "pinnedWing": "পিন করা উইং"
   },
   "notifications": {
     "title": "বিজ্ঞপ্তি",
@@ -64,9 +81,10 @@
     "liked": "আপনার উইং পছন্দ করেছেন",
     "commented": "আপনার উইংয়ে মন্তব্য করেছেন",
     "followed": "আপনাকে ফলো করেছেন",
-    "reposted": "আপনার উইং রিপোস্ট করেছেন"
+    "reposted": "আপনার উইং রিপোস্ট করেছেন",
+    "mentioned": "আপনার উল্লেখ করেছেন"
   },
-    "chat": {
+  "chat": {
     "title": "চ্যাট",
     "startMessage": "নতুন বার্তা শুরু করুন",
     "typeMessage": "বার্তা টাইপ করুন...",

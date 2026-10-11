@@ -8,7 +8,18 @@
     "chat": "ચેટ",
     "history": "ઇતિહાસ",
     "profile": "પ્રોફાઇલ",
-    "more": "વધુ"
+    "more": "વધુ",
+    "bookmarks": "બુકમાર્ક",
+    "lists": "સૂચિ",
+    "communities": "સમુદાયો",
+    "creator": "ક્રિએટર સ્ટુડિયો",
+    "business": "વ્યવસાય",
+    "ads": "જાહેરાત",
+    "spaces": "તમારી સ્પેસ બનાવો",
+    "invite": "મિત્રોને આમંત્રણ આપો",
+    "settings": "સેટિંગ્સ અને ગોપનીયતા",
+    "getVerified": "વેરિફાઇડ થાઓ",
+    "adminPanel": "એડમિન પેનલ"
   },
   "composer": {
     "titlePlaceholder": "શીર્ષક (વૈકલ્પિક)",
@@ -30,7 +41,12 @@
     "noAccount": "ખાતું નથી?",
     "haveAccount": "પહેલેથી ખાતું છે?",
     "invalidCredentials": "ખોટો ઇમેઇલ અથવા પાસવર્ડ",
-    "logout": "લોગ આઉટ"
+    "logout": "લોગ આઉટ",
+    "loggingIn": "લોગ ઇન થઈ રહ્યું છે...",
+    "creatingAccount": "ખાતું બની રહ્યું છે...",
+    "loginFailed": "લોગ ઇન નિષ્ફળ",
+    "registrationFailed": "નોંધણી નિષ્ફળ",
+    "passwordHint": "ઓછામાં ઓછા 6 અક્ષરો"
   },
   "actions": {
     "comment": "ટિપ્પણી",
@@ -56,7 +72,8 @@
     "follow": "ફોલો કરો",
     "unfollow": "અનફોલો",
     "editProfile": "પ્રોફાઇલ સંપાદિત કરો",
-    "noWings": "હજી કોઈ વિંગ નથી."
+    "noWings": "હજી કોઈ વિંગ નથી.",
+    "pinnedWing": "પિન કરેલી વિંગ"
   },
   "notifications": {
     "title": "સૂચનાઓ",
@@ -64,9 +81,10 @@
     "liked": "તમારી વિંગ ગમી",
     "commented": "તમારી વિંગ પર ટિપ્પણી કરી",
     "followed": "તમને ફોલો કર્યા",
-    "reposted": "તમારી વિંગ રીપોસ્ટ કરી"
+    "reposted": "તમારી વિંગ રીપોસ્ટ કરી",
+    "mentioned": "તમારો ઉલ્લેખ કર્યો"
   },
-    "chat": {
+  "chat": {
     "title": "ચેટ",
     "startMessage": "નવો સંદેશ શરૂ કરો",
     "typeMessage": "સંદેશ લખો...",
