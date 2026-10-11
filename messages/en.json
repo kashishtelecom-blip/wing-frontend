@@ -8,7 +8,18 @@
     "chat": "Chat",
     "history": "History",
     "profile": "Profile",
-    "more": "More"
+    "more": "More",
+    "bookmarks": "Bookmarks",
+    "lists": "Lists",
+    "communities": "Communities",
+    "creator": "Creator Studio",
+    "business": "Business",
+    "ads": "Ads",
+    "spaces": "Create your Space",
+    "invite": "Invite friends",
+    "settings": "Settings and privacy",
+    "getVerified": "Get Verified",
+    "adminPanel": "Admin Panel"
   },
   "composer": {
     "titlePlaceholder": "Title (optional)",
@@ -30,7 +41,12 @@
     "noAccount": "Don't have an account?",
     "haveAccount": "Already have an account?",
     "invalidCredentials": "Invalid credentials",
-    "logout": "Log out"
+    "logout": "Log out",
+    "loggingIn": "Logging in...",
+    "creatingAccount": "Creating account...",
+    "loginFailed": "Login failed",
+    "registrationFailed": "Registration failed",
+    "passwordHint": "At least 6 characters"
   },
   "actions": {
     "comment": "Comment",
@@ -56,7 +72,8 @@
     "follow": "Follow",
     "unfollow": "Unfollow",
     "editProfile": "Edit profile",
-    "noWings": "No wings yet."
+    "noWings": "No wings yet.",
+    "pinnedWing": "Pinned wing"
   },
   "notifications": {
     "title": "Notifications",
@@ -64,7 +81,8 @@
     "liked": "liked your wing",
     "commented": "commented on your wing",
     "followed": "followed you",
-    "reposted": "reposted your wing"
+    "reposted": "reposted your wing",
+    "mentioned": "mentioned you"
   },
   "chat": {
     "title": "Chat",
@@ -73,7 +91,19 @@
     "send": "Send",
     "online": "Online",
     "typing": "typing...",
-    "noConversations": "No conversations yet"
+    "noConversations": "No conversations yet",
+    "emptyHint": "Open a profile and click Message",
+    "noMessages": "No messages yet",
+    "sayHi": "Say hi to {name}!",
+    "selectConversation": "Select a conversation",
+    "selectHint": "or open a profile and click Message",
+    "photo": "📷 Photo",
+    "reply": "Reply",
+    "copy": "Copy",
+    "deleteMessage": "Delete",
+    "readyToSend": "Ready to send",
+    "deleted": "This message was deleted",
+    "replyingTo": "Replying to {name}"
   },
   "feed": {
     "forYou": "For you",

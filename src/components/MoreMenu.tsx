@@ -6,26 +6,28 @@ import {
   List, Users, Rocket, Briefcase, Megaphone, Mic,
   Settings, MoreHorizontal, BadgeCheck, Bookmark, Sparkles, Shield,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/auth-context';
 
-const MENU_ITEMS = [
-  { href: '/bookmarks', label: 'Bookmarks', Icon: Bookmark },
-  { href: '/lists', label: 'Lists', Icon: List },
-  { href: '/communities', label: 'Communities', Icon: Users },
-  { href: '/creator', label: 'Creator Studio', Icon: Rocket },
-  { href: '/business', label: 'Business', Icon: Briefcase },
-  { href: '/ads', label: 'Ads', Icon: Megaphone },
-  { href: '/spaces', label: 'Create your Space', Icon: Mic },
-  { href: '/waitlist', label: 'Invite friends', Icon: Sparkles },
-  { href: '/settings', label: 'Settings and privacy', Icon: Settings },
-];
-
 export function MoreMenu() {
+  const t = useTranslations('nav');
   const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   const isAdmin = (user as any)?.role === 'admin';
+
+  const MENU_ITEMS = [
+    { href: '/bookmarks', label: t('bookmarks'), Icon: Bookmark },
+    { href: '/lists', label: t('lists'), Icon: List },
+    { href: '/communities', label: t('communities'), Icon: Users },
+    { href: '/creator', label: t('creator'), Icon: Rocket },
+    { href: '/business', label: t('business'), Icon: Briefcase },
+    { href: '/ads', label: t('ads'), Icon: Megaphone },
+    { href: '/spaces', label: t('spaces'), Icon: Mic },
+    { href: '/waitlist', label: t('invite'), Icon: Sparkles },
+    { href: '/settings', label: t('settings'), Icon: Settings },
+  ];
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -46,7 +48,7 @@ export function MoreMenu() {
         }`}
       >
         <MoreHorizontal className="w-4 h-4" />
-        <span className="hidden sm:inline">More</span>
+        <span className="hidden sm:inline">{t('more')}</span>
       </button>
 
       {open && (
@@ -58,12 +60,11 @@ export function MoreMenu() {
           >
             <div className="flex items-center gap-3">
               <BadgeCheck className="w-5 h-5" />
-              <span className="font-semibold text-[15px]">Get Verified</span>
+              <span className="font-semibold text-[15px]">{t('getVerified')}</span>
             </div>
             <span className="text-xs font-bold bg-blue-500 text-white px-2 py-0.5 rounded">₹199</span>
           </Link>
 
-          {/* ✅ Admin link (only visible to admins) */}
           {isAdmin && (
             <Link
               href="/admin"
@@ -71,7 +72,7 @@ export function MoreMenu() {
               className="flex items-center gap-3 px-4 py-3 hover:bg-red-50 dark:hover:bg-red-950/40 transition text-red-600 dark:text-red-400 border-b border-gray-100 dark:border-gray-800"
             >
               <Shield className="w-5 h-5" />
-              <span className="font-medium text-[15px]">Admin Panel</span>
+              <span className="font-medium text-[15px]">{t('adminPanel')}</span>
             </Link>
           )}
 

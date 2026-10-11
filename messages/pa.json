@@ -66,14 +66,26 @@
     "followed": "ਤੁਹਾਨੂੰ ਫਾਲੋ ਕੀਤਾ",
     "reposted": "ਤੁਹਾਡੀ ਵਿੰਗ ਰੀਪੋਸਟ ਕੀਤੀ"
   },
-  "chat": {
+    "chat": {
     "title": "ਚੈਟ",
     "startMessage": "ਨਵਾਂ ਸੁਨੇਹਾ ਸ਼ੁਰੂ ਕਰੋ",
     "typeMessage": "ਸੁਨੇਹਾ ਟਾਈਪ ਕਰੋ...",
     "send": "ਭੇਜੋ",
     "online": "ਆਨਲਾਈਨ",
     "typing": "ਟਾਈਪ ਕਰ ਰਹੇ ਹਨ...",
-    "noConversations": "ਅਜੇ ਕੋਈ ਗੱਲਬਾਤ ਨਹੀਂ"
+    "noConversations": "ਅਜੇ ਕੋਈ ਗੱਲਬਾਤ ਨਹੀਂ",
+    "emptyHint": "ਪ੍ਰੋਫਾਈਲ ਖੋਲ੍ਹੋ ਅਤੇ ਮੈਸੇਜ 'ਤੇ ਕਲਿੱਕ ਕਰੋ",
+    "noMessages": "ਅਜੇ ਕੋਈ ਸੁਨੇਹਾ ਨਹੀਂ",
+    "sayHi": "{name} ਨੂੰ ਹਾਏ ਕਹੋ!",
+    "selectConversation": "ਗੱਲਬਾਤ ਚੁਣੋ",
+    "selectHint": "ਜਾਂ ਪ੍ਰੋਫਾਈਲ ਖੋਲ੍ਹੋ ਅਤੇ ਮੈਸੇਜ 'ਤੇ ਕਲਿੱਕ ਕਰੋ",
+    "photo": "📷 ਫੋਟੋ",
+    "reply": "ਜਵਾਬ ਦਿਓ",
+    "copy": "ਕਾਪੀ ਕਰੋ",
+    "deleteMessage": "ਮਿਟਾਓ",
+    "readyToSend": "ਭੇਜਣ ਲਈ ਤਿਆਰ",
+    "deleted": "ਇਹ ਸੁਨੇਹਾ ਮਿਟਾ ਦਿੱਤਾ ਗਿਆ",
+    "replyingTo": "{name} ਨੂੰ ਜਵਾਬ"
   },
   "feed": {
     "forYou": "ਤੁਹਾਡੇ ਲਈ",

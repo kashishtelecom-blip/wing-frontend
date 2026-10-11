@@ -66,14 +66,26 @@
     "followed": "यांनी तुम्हाला फॉलो केले",
     "reposted": "यांनी तुमची विंग रीपोस्ट केली"
   },
-  "chat": {
+    "chat": {
     "title": "चॅट",
     "startMessage": "नवीन संदेश सुरू करा",
     "typeMessage": "संदेश लिहा...",
     "send": "पाठवा",
     "online": "ऑनलाइन",
     "typing": "टाइप करत आहे...",
-    "noConversations": "अजून संभाषण नाही"
+    "noConversations": "अजून संभाषण नाही",
+    "emptyHint": "प्रोफाइल उघडा आणि मेसेजवर क्लिक करा",
+    "noMessages": "अजून संदेश नाही",
+    "sayHi": "{name} ला हाय म्हणा!",
+    "selectConversation": "संभाषण निवडा",
+    "selectHint": "किंवा प्रोफाइल उघडा आणि मेसेजवर क्लिक करा",
+    "photo": "📷 फोटो",
+    "reply": "उत्तर द्या",
+    "copy": "कॉपी करा",
+    "deleteMessage": "हटवा",
+    "readyToSend": "पाठवण्यासाठी तयार",
+    "deleted": "हा संदेश हटवला गेला",
+    "replyingTo": "{name} ला उत्तर"
   },
   "feed": {
     "forYou": "तुमच्यासाठी",

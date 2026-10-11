@@ -66,14 +66,26 @@
     "followed": "আপনাকে ফলো করেছেন",
     "reposted": "আপনার উইং রিপোস্ট করেছেন"
   },
-  "chat": {
+    "chat": {
     "title": "চ্যাট",
     "startMessage": "নতুন বার্তা শুরু করুন",
     "typeMessage": "বার্তা টাইপ করুন...",
     "send": "পাঠান",
     "online": "অনলাইন",
     "typing": "টাইপ করছেন...",
-    "noConversations": "এখনও কোনও কথোপকথন নেই"
+    "noConversations": "এখনও কোনও কথোপকথন নেই",
+    "emptyHint": "প্রোফাইল খুলুন এবং মেসেজ ক্লিক করুন",
+    "noMessages": "এখনও কোনও বার্তা নেই",
+    "sayHi": "{name} কে হাই বলুন!",
+    "selectConversation": "কথোপকথন নির্বাচন করুন",
+    "selectHint": "অথবা প্রোফাইল খুলুন এবং মেসেজ ক্লিক করুন",
+    "photo": "📷 ছবি",
+    "reply": "উত্তর দিন",
+    "copy": "অনুলিপি করুন",
+    "deleteMessage": "মুছুন",
+    "readyToSend": "পাঠাতে প্রস্তুত",
+    "deleted": "এই বার্তাটি মুছে ফেলা হয়েছে",
+    "replyingTo": "{name} কে উত্তর"
   },
   "feed": {
     "forYou": "আপনার জন্য",

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import {
   Heart, MessageCircle, Repeat2, Bookmark, Eye, MoreHorizontal, Trash2, Pin, AlertTriangle, Pencil,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import api from '@/lib/api';
 import { Wing } from '@/lib/wings';
 import { timeAgo } from '@/lib/time';
@@ -24,6 +25,7 @@ interface Props {
 }
 
 export function WingCard({ wing, onDeleted }: Props) {
+  const t = useTranslations('actions');
   const { user } = useAuth();
   const { likedIds, repostedIds, bookmarkedIds, toggleLike, toggleRepost, toggleBookmark } = useInteractions();
   const router = useRouter();
@@ -34,7 +36,6 @@ export function WingCard({ wing, onDeleted }: Props) {
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [showComments, setShowComments] = useState(false);
 
-  // ─── Edit state ───
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editTitle, setEditTitle] = useState(wing.title || '');
   const [editContent, setEditContent] = useState(wing.content || '');
@@ -88,7 +89,7 @@ export function WingCard({ wing, onDeleted }: Props) {
   const handleDelete = async (e: React.MouseEvent) => {
     e.preventDefault(); e.stopPropagation();
     setMenuOpen(false);
-    if (!confirm('Delete this wing?')) return;
+    if (!confirm(t('deleteConfirm'))) return;
     try {
       await api.delete('/wings/' + wing._id);
       if (onDeleted) onDeleted(wing._id); else router.refresh();
@@ -100,7 +101,6 @@ export function WingCard({ wing, onDeleted }: Props) {
     setMenuOpen(false);
     try {
       await api.post('/users/me/pin/' + wing._id);
-      alert('Wing pinned to your profile!');
       router.refresh();
     } catch (err) { console.error(err); }
   };
@@ -127,7 +127,7 @@ export function WingCard({ wing, onDeleted }: Props) {
       router.refresh();
     } catch (err) {
       console.error(err);
-      alert('Failed to save changes. Try again.');
+      alert('Failed to save changes.');
     } finally {
       setEditSaving(false);
     }
@@ -186,7 +186,7 @@ export function WingCard({ wing, onDeleted }: Props) {
                     <>
                       <span className="text-gray-400">·</span>
                       <span className="text-gray-500 dark:text-gray-400 text-xs italic">
-                        edited
+                        {t('edited')}
                       </span>
                     </>
                   )}
@@ -218,19 +218,19 @@ export function WingCard({ wing, onDeleted }: Props) {
                             onClick={openEditDialog}
                             className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm text-gray-800 dark:text-gray-200"
                           >
-                            <Pencil className="w-4 h-4" /> Edit
+                            <Pencil className="w-4 h-4" /> {t('edit')}
                           </button>
                           <button
                             onClick={handlePin}
                             className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm text-gray-800 dark:text-gray-200"
                           >
-                            <Pin className="w-4 h-4" /> Pin to profile
+                            <Pin className="w-4 h-4" /> {t('pin')}
                           </button>
                           <button
                             onClick={handleDelete}
                             className="w-full flex items-center gap-2 px-3 py-2 hover:bg-red-50 dark:hover:bg-red-950/40 text-sm text-red-500"
                           >
-                            <Trash2 className="w-4 h-4" /> Delete
+                            <Trash2 className="w-4 h-4" /> {t('delete')}
                           </button>
                         </>
                       )}
@@ -244,7 +244,7 @@ export function WingCard({ wing, onDeleted }: Props) {
                           }}
                           className="w-full flex items-center gap-2 px-3 py-2 hover:bg-red-50 dark:hover:bg-red-950/40 text-sm text-red-500"
                         >
-                          <AlertTriangle className="w-4 h-4" /> Report copyright
+                          <AlertTriangle className="w-4 h-4" /> {t('report')}
                         </button>
                       )}
                     </div>
@@ -291,7 +291,6 @@ export function WingCard({ wing, onDeleted }: Props) {
                 </div>
               )}
 
-              {/* Actions row */}
               <div className="flex items-center justify-between mt-3 text-gray-500 dark:text-gray-400 text-sm">
                 <button
                   type="button"
@@ -303,6 +302,7 @@ export function WingCard({ wing, onDeleted }: Props) {
                     'flex items-center gap-1 transition ' +
                     (showComments ? 'text-blue-500' : 'hover:text-blue-500')
                   }
+                  title={t('comment')}
                 >
                   <MessageCircle className="w-4 h-4" />
                   <span>{commentsCount}</span>
@@ -316,6 +316,7 @@ export function WingCard({ wing, onDeleted }: Props) {
                       ? 'flex items-center gap-1 text-green-500 transition'
                       : 'flex items-center gap-1 hover:text-green-500 transition'
                   }
+                  title={t('repost')}
                 >
                   <Repeat2 className="w-4 h-4" />
                   <span>{repostsCount}</span>
@@ -329,6 +330,7 @@ export function WingCard({ wing, onDeleted }: Props) {
                       ? 'flex items-center gap-1 text-red-500 transition'
                       : 'flex items-center gap-1 hover:text-red-500 transition'
                   }
+                  title={t('like')}
                 >
                   <Heart className={liked ? 'w-4 h-4 fill-current' : 'w-4 h-4'} />
                   <span>{likesCount}</span>
@@ -342,17 +344,17 @@ export function WingCard({ wing, onDeleted }: Props) {
                       ? 'flex items-center gap-1 text-blue-500 transition'
                       : 'flex items-center gap-1 hover:text-blue-500 transition'
                   }
+                  title={t('bookmark')}
                 >
                   <Bookmark className={bookmarked ? 'w-4 h-4 fill-current' : 'w-4 h-4'} />
                 </button>
 
-                <span className="flex items-center gap-1">
+                <span className="flex items-center gap-1" title={t('views')}>
                   <Eye className="w-4 h-4" />
                   <span>{wing.views}</span>
                 </span>
               </div>
 
-              {/* Inline comments */}
               {showComments && (
                 <CommentsSection
                   wingId={wing._id}
@@ -372,7 +374,6 @@ export function WingCard({ wing, onDeleted }: Props) {
         />
       )}
 
-      {/* ─── Edit modal ─── */}
       {showEditDialog && (
         <div
           className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4"
@@ -409,14 +410,14 @@ export function WingCard({ wing, onDeleted }: Props) {
                 disabled={editSaving}
                 className="px-4 py-2 rounded-full text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition disabled:opacity-50"
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 onClick={handleSaveEdit}
                 disabled={editSaving || !editContent.trim()}
                 className="px-5 py-2 rounded-full text-sm font-semibold bg-blue-500 text-white hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {editSaving ? 'Saving…' : 'Save'}
+                {editSaving ? '...' : t('save')}
               </button>
             </div>
           </div>

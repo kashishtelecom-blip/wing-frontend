@@ -66,14 +66,26 @@
     "followed": "તમને ફોલો કર્યા",
     "reposted": "તમારી વિંગ રીપોસ્ટ કરી"
   },
-  "chat": {
+    "chat": {
     "title": "ચેટ",
     "startMessage": "નવો સંદેશ શરૂ કરો",
     "typeMessage": "સંદેશ લખો...",
     "send": "મોકલો",
     "online": "ઓનલાઇન",
     "typing": "ટાઇપ કરી રહ્યા છે...",
-    "noConversations": "હજી કોઈ વાતચીત નથી"
+    "noConversations": "હજી કોઈ વાતચીત નથી",
+    "emptyHint": "પ્રોફાઇલ ખોલો અને મેસેજ પર ક્લિક કરો",
+    "noMessages": "હજી કોઈ સંદેશ નથી",
+    "sayHi": "{name} ને હાય કહો!",
+    "selectConversation": "વાતચીત પસંદ કરો",
+    "selectHint": "અથવા પ્રોફાઇલ ખોલો અને મેસેજ પર ક્લિક કરો",
+    "photo": "📷 ફોટો",
+    "reply": "જવાબ આપો",
+    "copy": "કૉપિ કરો",
+    "deleteMessage": "કાઢી નાખો",
+    "readyToSend": "મોકલવા તૈયાર",
+    "deleted": "આ સંદેશ કાઢી નાખવામાં આવ્યો",
+    "replyingTo": "{name} ને જવાબ"
   },
   "feed": {
     "forYou": "તમારા માટે",

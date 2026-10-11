@@ -8,6 +8,7 @@ import {
   Copy, Trash2, Reply as ReplyIcon,
   Clock, Check, CheckCheck,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/auth-context';
 import { NavBar } from '@/components/NavBar';
 import { Avatar } from '@/components/Avatar';
@@ -34,6 +35,7 @@ function MessageTicks({
 }
 
 function ChatPageInner() {
+  const t = useTranslations('chat');
   const { user, loading: authLoading } = useAuth();
   const { socket, isOnline } = useSocket();
   const router = useRouter();
@@ -150,7 +152,6 @@ function ChatPageInner() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
   }, [messages]);
 
-  // 🔌 Listen for real-time messages + typing events
   useEffect(() => {
     if (!socket) return;
 
@@ -364,14 +365,14 @@ function ChatPageInner() {
       <main className="max-w-4xl mx-auto flex w-full" style={{ height: 'calc(100vh - 60px)' }}>
         <div className={sidebarClass}>
           <div className="p-4 border-b border-gray-200 dark:border-gray-800">
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Messages</h1>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">{t('title')}</h1>
           </div>
           <div className="flex-1 overflow-y-auto">
             {conversations.length === 0 ? (
               <div className="p-8 text-center text-gray-500 dark:text-gray-400 text-sm">
-                No conversations yet.
+                {t('noConversations')}.
                 <br />
-                Open a profile and click Message to start one.
+                {t('emptyHint')}.
               </div>
             ) : (
               conversations.map((conv) => (
@@ -396,12 +397,12 @@ function ChatPageInner() {
                     {conv.lastMessage ? (
                       <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
                         {conv.lastMessage.mediaUrl && !conv.lastMessage.text
-                          ? '📷 Photo'
+                          ? t('photo')
                           : conv.lastMessage.text}
                       </p>
                     ) : (
                       <p className="text-xs text-gray-400 dark:text-gray-500 italic mt-0.5">
-                        No messages yet
+                        {t('noMessages')}
                       </p>
                     )}
                   </div>
@@ -444,7 +445,7 @@ function ChatPageInner() {
                   </div>
                   {otherTyping ? (
                     <p className="text-xs text-blue-500 dark:text-blue-400 italic">
-                      typing...
+                      {t('typing')}
                     </p>
                   ) : (
                     <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
@@ -462,7 +463,7 @@ function ChatPageInner() {
                 </div>
               ) : messages.length === 0 ? (
                 <div className="text-center text-gray-500 dark:text-gray-400 text-sm py-8">
-                  Say hi to {activeConv.other.name || activeConv.other.username}!
+                  {t('sayHi', { name: activeConv.other.name || activeConv.other.username })}
                 </div>
               ) : (
                 messages.map((msg) => {
@@ -528,17 +529,17 @@ function ChatPageInner() {
                               {msg.replyTo.sender?.name || msg.replyTo.sender?.username || 'Unknown'}
                             </p>
                             <p className="truncate opacity-80">
-                              {msg.replyTo.deletedAt
-                                ? 'Deleted message'
+                              {(msg.replyTo as any).deletedAt
+                                ? t('deleted')
                                 : msg.replyTo.mediaUrl && !msg.replyTo.text
-                                ? '📷 Photo'
+                                ? t('photo')
                                 : msg.replyTo.text}
                             </p>
                           </div>
                         )}
                         {isDeleted ? (
                           <p className="text-sm italic opacity-60 px-4 py-2">
-                            This message was deleted
+                            {t('deleted')}
                           </p>
                         ) : (
                           <>
@@ -611,11 +612,11 @@ function ChatPageInner() {
                 <div className="p-3 pb-0 flex items-start gap-3">
                   <div className="flex-1 min-w-0 border-l-2 border-blue-500 pl-3">
                     <p className="text-xs font-semibold text-blue-500">
-                      Replying to {replyingTo.sender.name || replyingTo.sender.username}
+                      {t('replyingTo', { name: replyingTo.sender.name || replyingTo.sender.username })}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                       {replyingTo.mediaUrl && !replyingTo.text
-                        ? '📷 Photo'
+                        ? t('photo')
                         : replyingTo.text}
                     </p>
                   </div>
@@ -656,7 +657,7 @@ function ChatPageInner() {
                     </button>
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Ready to send
+                    {t('readyToSend')}
                   </p>
                 </div>
               )}
@@ -703,7 +704,7 @@ function ChatPageInner() {
                       }, 2000);
                     }
                   }}
-                  placeholder="Start a new message"
+                  placeholder={t('startMessage')}
                   className="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-gray-800 dark:text-white rounded-full outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                   disabled={sending}
                 />
@@ -726,10 +727,10 @@ function ChatPageInner() {
             <div className="text-center">
               <MessageCircle className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
               <p className="text-gray-500 dark:text-gray-400 text-sm">
-                Select a conversation
+                {t('selectConversation')}
               </p>
               <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">
-                or open a profile and click Message
+                {t('selectHint')}
               </p>
             </div>
           </div>
@@ -747,7 +748,7 @@ function ChatPageInner() {
             className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm text-gray-800 dark:text-gray-200"
           >
             <ReplyIcon className="w-4 h-4" />
-            Reply
+            {t('reply')}
           </button>
           {menuMsg.text && (
             <button
@@ -755,7 +756,7 @@ function ChatPageInner() {
               className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm text-gray-800 dark:text-gray-200"
             >
               <Copy className="w-4 h-4" />
-              Copy
+              {t('copy')}
             </button>
           )}
           {isMyMenuMsg && (
@@ -764,7 +765,7 @@ function ChatPageInner() {
               className="w-full flex items-center gap-2 px-3 py-2 hover:bg-red-50 dark:hover:bg-red-950/40 text-sm text-red-600 dark:text-red-400"
             >
               <Trash2 className="w-4 h-4" />
-              Delete
+              {t('deleteMessage')}
             </button>
           )}
         </div>
