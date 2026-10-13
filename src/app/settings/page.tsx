@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Check, Camera, BadgeCheck, Lock, Bell, Palette, UserX, VolumeX, Download, Trash2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/auth-context';
 import { NavBar } from '@/components/NavBar';
 import { VerifiedBadge } from '@/components/VerifiedBadge';
@@ -20,6 +21,7 @@ import { getMediaUrl } from '@/lib/media';
 type Section = 'profile' | 'privacy' | 'notifications' | 'content' | 'blocked' | 'account';
 
 export default function SettingsPage() {
+  const t = useTranslations('settings');
   const { user, loading: authLoading, logout } = useAuth();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -80,7 +82,7 @@ export default function SettingsPage() {
       setAvatarUrl(updated.avatarUrl);
       setTimeout(() => window.location.reload(), 500);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Avatar upload failed');
+      setError(err.response?.data?.message || t('avatarUploadFailed'));
     } finally {
       setUploadingAvatar(false);
     }
@@ -96,7 +98,7 @@ export default function SettingsPage() {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to save');
+      setError(err.response?.data?.message || t('failedToSave'));
     } finally {
       setSaving(false);
     }
@@ -136,7 +138,7 @@ export default function SettingsPage() {
   };
 
   const handleDeactivate = async () => {
-    if (!confirm('Deactivate your account? You can reactivate anytime by logging in again.')) return;
+    if (!confirm(t('deactivateConfirm'))) return;
     await deactivateAccount();
     logout();
   };
@@ -145,7 +147,7 @@ export default function SettingsPage() {
     return (
       <div className="min-h-screen bg-white dark:bg-gray-950">
         <NavBar />
-        <div className="p-8 text-center text-gray-500 dark:text-gray-400">Loading...</div>
+        <div className="p-8 text-center text-gray-500 dark:text-gray-400">{t('loading')}</div>
       </div>
     );
   }
@@ -169,12 +171,12 @@ export default function SettingsPage() {
   );
 
   const sections: { key: Section; label: string; Icon: any }[] = [
-    { key: 'profile', label: 'Profile', Icon: BadgeCheck },
-    { key: 'privacy', label: 'Privacy', Icon: Lock },
-    { key: 'notifications', label: 'Notifications', Icon: Bell },
-    { key: 'content', label: 'Content', Icon: Palette },
-    { key: 'blocked', label: 'Blocked & Muted', Icon: UserX },
-    { key: 'account', label: 'Account', Icon: Trash2 },
+    { key: 'profile', label: t('sections.profile'), Icon: BadgeCheck },
+    { key: 'privacy', label: t('sections.privacy'), Icon: Lock },
+    { key: 'notifications', label: t('sections.notifications'), Icon: Bell },
+    { key: 'content', label: t('sections.content'), Icon: Palette },
+    { key: 'blocked', label: t('sections.blocked'), Icon: UserX },
+    { key: 'account', label: t('sections.account'), Icon: Trash2 },
   ];
 
   return (
@@ -185,7 +187,7 @@ export default function SettingsPage() {
           <button onClick={() => router.back()} className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Settings</h1>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white">{t('title')}</h1>
         </div>
 
         <div className="flex overflow-x-auto border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 sticky top-14 z-10">
@@ -209,7 +211,7 @@ export default function SettingsPage() {
         {section === 'profile' && (
           <div className="p-6 space-y-6">
             <div className="border-b border-gray-200 dark:border-gray-800 pb-6">
-              <h2 className="font-semibold text-gray-900 dark:text-white mb-4">Profile picture</h2>
+              <h2 className="font-semibold text-gray-900 dark:text-white mb-4">{t('profilePicture')}</h2>
               <div className="flex items-center gap-6">
                 <div className="relative">
                   {avatarUrl ? (
@@ -252,29 +254,33 @@ export default function SettingsPage() {
                     className="flex items-center gap-2 bg-gray-900 dark:bg-white dark:text-gray-900 hover:bg-black dark:hover:bg-gray-100 text-white font-semibold py-2 px-5 rounded-full transition disabled:opacity-50 text-sm"
                   >
                     <Camera className="w-4 h-4" />
-                    {uploadingAvatar ? 'Uploading...' : 'Change photo'}
+                    {uploadingAvatar ? t('uploading') : t('changePhoto')}
                   </button>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">JPG, PNG or GIF. Max 3MB.</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">{t('photoHint')}</p>
                 </div>
               </div>
             </div>
 
             <div className="border-b border-gray-200 dark:border-gray-800 pb-6">
-              <h2 className="font-semibold text-gray-900 dark:text-white mb-4">Verification</h2>
+              <h2 className="font-semibold text-gray-900 dark:text-white mb-4">{t('verification')}</h2>
               {isVerified && subscription?.isActive ? (
                 <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 rounded-xl p-4">
                   <div className="flex items-center gap-3">
                     <VerifiedBadge size="lg" />
                     <div>
-                      <p className="font-semibold text-gray-900 dark:text-white">Verified account</p>
+                      <p className="font-semibold text-gray-900 dark:text-white">{t('verifiedAccount')}</p>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {subscription.daysLeft} days remaining · renews{' '}
-                        {subscription.verifiedUntil ? new Date(subscription.verifiedUntil).toLocaleDateString() : ''}
+                        {t('daysRemaining', { days: subscription.daysLeft })} ·{' '}
+                        {t('renews', {
+                          date: subscription.verifiedUntil
+                            ? new Date(subscription.verifiedUntil).toLocaleDateString()
+                            : '',
+                        })}
                       </p>
                     </div>
                   </div>
                   <Link href="/subscribe" className="text-sm text-blue-600 dark:text-blue-400 font-medium hover:underline">
-                    Manage
+                    {t('manage')}
                   </Link>
                 </div>
               ) : (
@@ -282,15 +288,15 @@ export default function SettingsPage() {
                   <div className="flex items-center gap-3 mb-3">
                     <BadgeCheck className="w-6 h-6" />
                     <div>
-                      <p className="font-bold text-lg">Get Verified</p>
-                      <p className="text-sm opacity-90">₹199/month · cancel anytime</p>
+                      <p className="font-bold text-lg">{t('getVerified')}</p>
+                      <p className="text-sm opacity-90">{t('verifiedPrice')}</p>
                     </div>
                   </div>
                   <button
                     onClick={() => router.push('/subscribe')}
                     className="w-full bg-white text-blue-600 font-semibold py-2 rounded-full"
                   >
-                    Subscribe now
+                    {t('subscribeNow')}
                   </button>
                 </div>
               )}
@@ -299,7 +305,7 @@ export default function SettingsPage() {
             <form onSubmit={handleProfileSave} className="space-y-4">
               <div>
                 <label htmlFor="settings-username" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Username
+                  {t('username')}
                 </label>
                 <input
                   id="settings-username"
@@ -312,7 +318,7 @@ export default function SettingsPage() {
               </div>
               <div>
                 <label htmlFor="settings-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Email
+                  {t('email')}
                 </label>
                 <input
                   id="settings-email"
@@ -325,7 +331,7 @@ export default function SettingsPage() {
               </div>
               <div>
                 <label htmlFor="settings-display-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Display name
+                  {t('displayName')}
                 </label>
                 <input
                   id="settings-display-name"
@@ -339,7 +345,7 @@ export default function SettingsPage() {
               </div>
               <div>
                 <label htmlFor="settings-bio" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Bio
+                  {t('bio')}
                 </label>
                 <textarea
                   id="settings-bio"
@@ -354,11 +360,11 @@ export default function SettingsPage() {
               {error && <div className="bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 p-3 rounded-lg text-sm">{error}</div>}
               <div className="flex items-center gap-3">
                 <button type="submit" disabled={saving} className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-full transition disabled:opacity-50">
-                  {saving ? 'Saving...' : 'Save changes'}
+                  {saving ? t('saving') : t('saveChanges')}
                 </button>
                 {saved && (
                   <span className="text-green-600 dark:text-green-400 text-sm flex items-center gap-1">
-                    <Check className="w-4 h-4" /> Saved
+                    <Check className="w-4 h-4" /> {t('saved')}
                   </span>
                 )}
               </div>
@@ -370,20 +376,20 @@ export default function SettingsPage() {
           <div className="p-6 space-y-4">
             <div className="flex items-start justify-between gap-4 py-3 border-b border-gray-100 dark:border-gray-800">
               <div>
-                <p className="font-semibold text-gray-900 dark:text-white">Private account</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Only approved followers can see your wings</p>
+                <p className="font-semibold text-gray-900 dark:text-white">{t('privateAccount')}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{t('privateAccountDesc')}</p>
               </div>
               <Toggle checked={settings.privacy.privateAccount} onChange={() => updateSettingSection('privacy', { privateAccount: !settings.privacy.privateAccount })} />
             </div>
             <div className="flex items-start justify-between gap-4 py-3 border-b border-gray-100 dark:border-gray-800">
               <div>
-                <p className="font-semibold text-gray-900 dark:text-white">Show activity status</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Let others see when you&apos;re online</p>
+                <p className="font-semibold text-gray-900 dark:text-white">{t('showActivity')}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{t('showActivityDesc')}</p>
               </div>
               <Toggle checked={settings.privacy.showActivity} onChange={() => updateSettingSection('privacy', { showActivity: !settings.privacy.showActivity })} />
             </div>
             <div className="py-3">
-              <p className="font-semibold text-gray-900 dark:text-white mb-2">Who can message you</p>
+              <p className="font-semibold text-gray-900 dark:text-white mb-2">{t('whoCanMessage')}</p>
               <div className="space-y-2">
                 {(['everyone', 'followers', 'nobody'] as const).map((opt) => (
                   <label key={opt} htmlFor={`dm-${opt}`} className="flex items-center gap-3 cursor-pointer p-2 -mx-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900">
@@ -395,7 +401,7 @@ export default function SettingsPage() {
                       onChange={() => updateSettingSection('privacy', { allowDMsFrom: opt })}
                       className="w-4 h-4 accent-blue-500"
                     />
-                    <span className="text-gray-800 dark:text-gray-200 capitalize">{opt}</span>
+                    <span className="text-gray-800 dark:text-gray-200">{t(opt)}</span>
                   </label>
                 ))}
               </div>
@@ -407,29 +413,29 @@ export default function SettingsPage() {
           <div className="p-6 space-y-4">
             <div className="flex items-start justify-between gap-4 py-3 border-b border-gray-100 dark:border-gray-800">
               <div>
-                <p className="font-semibold text-gray-900 dark:text-white">In-app notifications</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Get alerts inside Wing</p>
+                <p className="font-semibold text-gray-900 dark:text-white">{t('inApp')}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{t('inAppDesc')}</p>
               </div>
               <Toggle checked={settings.notifications.inAppNotifications} onChange={() => updateSettingSection('notifications', { inAppNotifications: !settings.notifications.inAppNotifications })} />
             </div>
             <div className="flex items-start justify-between gap-4 py-3 border-b border-gray-100 dark:border-gray-800">
               <div>
-                <p className="font-semibold text-gray-900 dark:text-white">Email on mention</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Get an email when someone @mentions you</p>
+                <p className="font-semibold text-gray-900 dark:text-white">{t('emailOnMention')}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{t('emailOnMentionDesc')}</p>
               </div>
               <Toggle checked={settings.notifications.emailOnMention} onChange={() => updateSettingSection('notifications', { emailOnMention: !settings.notifications.emailOnMention })} />
             </div>
             <div className="flex items-start justify-between gap-4 py-3 border-b border-gray-100 dark:border-gray-800">
               <div>
-                <p className="font-semibold text-gray-900 dark:text-white">Email on follow</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Get an email when someone follows you</p>
+                <p className="font-semibold text-gray-900 dark:text-white">{t('emailOnFollow')}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{t('emailOnFollowDesc')}</p>
               </div>
               <Toggle checked={settings.notifications.emailOnFollow} onChange={() => updateSettingSection('notifications', { emailOnFollow: !settings.notifications.emailOnFollow })} />
             </div>
             <div className="flex items-start justify-between gap-4 py-3">
               <div>
-                <p className="font-semibold text-gray-900 dark:text-white">Email on like</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Get an email when someone likes your wing</p>
+                <p className="font-semibold text-gray-900 dark:text-white">{t('emailOnLike')}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{t('emailOnLikeDesc')}</p>
               </div>
               <Toggle checked={settings.notifications.emailOnLike} onChange={() => updateSettingSection('notifications', { emailOnLike: !settings.notifications.emailOnLike })} />
             </div>
@@ -440,15 +446,15 @@ export default function SettingsPage() {
           <div className="p-6 space-y-4">
             <div className="flex items-start justify-between gap-4 py-3 border-b border-gray-100 dark:border-gray-800">
               <div>
-                <p className="font-semibold text-gray-900 dark:text-white">Show sensitive content</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Display content that may be sensitive</p>
+                <p className="font-semibold text-gray-900 dark:text-white">{t('sensitiveContent')}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{t('sensitiveContentDesc')}</p>
               </div>
               <Toggle checked={settings.content.showSensitiveContent} onChange={() => updateSettingSection('content', { showSensitiveContent: !settings.content.showSensitiveContent })} />
             </div>
             <div className="flex items-start justify-between gap-4 py-3">
               <div>
-                <p className="font-semibold text-gray-900 dark:text-white">Autoplay videos</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Videos play automatically in the feed</p>
+                <p className="font-semibold text-gray-900 dark:text-white">{t('autoplay')}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{t('autoplayDesc')}</p>
               </div>
               <Toggle checked={settings.content.autoplayVideos} onChange={() => updateSettingSection('content', { autoplayVideos: !settings.content.autoplayVideos })} />
             </div>
@@ -460,10 +466,12 @@ export default function SettingsPage() {
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <UserX className="w-5 h-5 text-red-500" />
-                <h2 className="font-bold text-gray-900 dark:text-white">Blocked ({blocked.length})</h2>
+                <h2 className="font-bold text-gray-900 dark:text-white">
+                  {t('blockedTitle')} ({blocked.length})
+                </h2>
               </div>
               {blocked.length === 0 ? (
-                <p className="text-sm text-gray-500 dark:text-gray-400 py-4">You haven&apos;t blocked anyone.</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 py-4">{t('noBlocked')}</p>
               ) : (
                 <div className="space-y-2">
                   {blocked.map((u) => (
@@ -477,7 +485,7 @@ export default function SettingsPage() {
                         onClick={() => handleUnblock(u._id)}
                         className="text-sm text-blue-500 hover:text-blue-600 font-medium"
                       >
-                        Unblock
+                        {t('unblock')}
                       </button>
                     </div>
                   ))}
@@ -488,10 +496,12 @@ export default function SettingsPage() {
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <VolumeX className="w-5 h-5 text-orange-500" />
-                <h2 className="font-bold text-gray-900 dark:text-white">Muted ({muted.length})</h2>
+                <h2 className="font-bold text-gray-900 dark:text-white">
+                  {t('mutedTitle')} ({muted.length})
+                </h2>
               </div>
               {muted.length === 0 ? (
-                <p className="text-sm text-gray-500 dark:text-gray-400 py-4">You haven&apos;t muted anyone.</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 py-4">{t('noMuted')}</p>
               ) : (
                 <div className="space-y-2">
                   {muted.map((u) => (
@@ -505,7 +515,7 @@ export default function SettingsPage() {
                         onClick={() => handleUnmute(u._id)}
                         className="text-sm text-blue-500 hover:text-blue-600 font-medium"
                       >
-                        Unmute
+                        {t('unmute')}
                       </button>
                     </div>
                   ))}
@@ -520,32 +530,28 @@ export default function SettingsPage() {
             <div className="border border-gray-200 dark:border-gray-800 rounded-xl p-5">
               <div className="flex items-center gap-2 mb-3">
                 <Download className="w-5 h-5 text-blue-500" />
-                <h2 className="font-bold text-gray-900 dark:text-white">Download your data</h2>
+                <h2 className="font-bold text-gray-900 dark:text-white">{t('downloadData')}</h2>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                Get a copy of your Wing account data: profile, wings, comments, and more.
-              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{t('downloadDataDesc')}</p>
               <button
                 onClick={handleExport}
                 className="bg-gray-900 dark:bg-white dark:text-gray-900 hover:bg-black dark:hover:bg-gray-100 text-white font-semibold py-2 px-5 rounded-full text-sm"
               >
-                Download JSON
+                {t('downloadJson')}
               </button>
             </div>
 
             <div className="border border-red-200 dark:border-red-900 rounded-xl p-5 bg-red-50/40 dark:bg-red-950/30">
               <div className="flex items-center gap-2 mb-3">
                 <Trash2 className="w-5 h-5 text-red-500" />
-                <h2 className="font-bold text-red-700 dark:text-red-400">Deactivate account</h2>
+                <h2 className="font-bold text-red-700 dark:text-red-400">{t('deactivate')}</h2>
               </div>
-              <p className="text-sm text-red-600 dark:text-red-400 mb-4">
-                Temporarily disable your account. Your profile and wings will be hidden. You can reactivate anytime by logging back in.
-              </p>
+              <p className="text-sm text-red-600 dark:text-red-400 mb-4">{t('deactivateDesc')}</p>
               <button
                 onClick={handleDeactivate}
                 className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-5 rounded-full text-sm"
               >
-                Deactivate my account
+                {t('deactivateButton')}
               </button>
             </div>
           </div>
