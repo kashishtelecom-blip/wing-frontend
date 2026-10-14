@@ -12,6 +12,9 @@ import { PwaProvider } from '@/components/PwaProvider';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 
+// ← ADDED: force every request to re-render so the locale cookie is always fresh
+export const dynamic = 'force-dynamic';
+
 const inter = Inter({ subsets: ['latin'] });
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://wing-frontend.vercel.app';
@@ -106,22 +109,22 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body className={inter.className + ' bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100'}>
         <NextIntlClientProvider locale={locale} messages={messages}>
-  <PwaProvider />
-  <ThemeProvider>
-    <AuthProvider>
-      <SocketProvider>
-        <InteractionsProvider>
-          <div className="min-h-screen flex flex-col">
-            <div className="flex-1">{children}</div>
-            <Footer />
-          </div>
-        </InteractionsProvider>
-      </SocketProvider>
-    </AuthProvider>
-  </ThemeProvider>
-  <Analytics />
-  <SpeedInsights />
-</NextIntlClientProvider>
+          <PwaProvider />
+          <ThemeProvider>
+            <AuthProvider>
+              <SocketProvider>
+                <InteractionsProvider>
+                  <div className="min-h-screen flex flex-col">
+                    <div className="flex-1">{children}</div>
+                    <Footer />
+                  </div>
+                </InteractionsProvider>
+              </SocketProvider>
+            </AuthProvider>
+          </ThemeProvider>
+          <Analytics />
+          <SpeedInsights />
+        </NextIntlClientProvider>
       </body>
     </html>
   );

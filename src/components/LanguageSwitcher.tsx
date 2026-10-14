@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState } from 'react';
 import { useLocale } from 'next-intl';
-import { useRouter } from 'next/navigation';
 import { Globe } from 'lucide-react';
 
 const LANGUAGES = [
@@ -21,13 +20,14 @@ const LANGUAGES = [
 export function LanguageSwitcher() {
   const localeFromHook = useLocale();
   const [locale, setLocale] = useState<string>(localeFromHook);
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
 
   const change = (code: string) => {
+    // 1. Persist choice in a cookie (1 year)
     document.cookie = `locale=${code};path=/;max-age=31536000;SameSite=Lax`;
-    setLocale(code);                 // ← instant label update
-    startTransition(() => router.refresh());
+    // 2. Update the visible label immediately
+    setLocale(code);
+    // 3. Hard reload — forces the server to re-render with the new cookie
+    window.location.reload();
   };
 
   return (
@@ -36,8 +36,7 @@ export function LanguageSwitcher() {
       <select
         value={locale}
         onChange={(e) => change(e.target.value)}
-        disabled={pending}
-        className="appearance-none bg-transparent text-sm text-gray-700 dark:text-gray-200 pl-8 pr-6 py-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition cursor-pointer disabled:opacity-50"
+        className="appearance-none bg-transparent text-sm text-gray-700 dark:text-gray-200 pl-8 pr-6 py-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition cursor-pointer"
         aria-label="Select language"
       >
         {LANGUAGES.map((l) => (
