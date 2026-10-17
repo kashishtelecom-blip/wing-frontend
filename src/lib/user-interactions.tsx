@@ -27,13 +27,22 @@ export function InteractionsProvider({ children }: { children: React.ReactNode }
   const inFlightReposts = useRef<Set<string>>(new Set());
   const inFlightBookmarks = useRef<Set<string>>(new Set());
 
-  const refresh = useCallback(async () => {
+    const refresh = useCallback(async () => {
     if (!user) return;
     try {
-      const [bookmarksRes, repostsRes] = await Promise.all([
+      const [bookmarksRes, repostsRes, likesRes] = await Promise.all([
         api.get('/users/me/bookmarks').catch(() => ({ data: [] })),
         api.get('/users/me/reposts').catch(() => ({ data: [] })),
+        api.get('/users/me/likes').catch(() => ({ data: [] })), // NEW
       ]);
+      
+      // NEW: Load likes
+      const lIds = new Set<string>();
+      (likesRes.data || []).forEach((l: any) => {
+        const id = l.wing?._id || l.wing;
+        if (id) lIds.add(id);
+      });
+      setLikedIds(lIds);
       const bIds = new Set<string>();
       (bookmarksRes.data || []).forEach((b: any) => {
         const id = b.wing?._id || b.wing;
