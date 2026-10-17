@@ -22,12 +22,10 @@ export function LanguageSwitcher() {
   const [locale, setLocale] = useState<string>(localeFromHook);
 
   const change = (code: string) => {
-    // 1. Persist choice in a cookie (1 year)
-    document.cookie = `locale=${code};path=/;max-age=31536000;SameSite=Lax`;
-    // 2. Update the visible label immediately
     setLocale(code);
-    // 3. Hard reload — forces the server to re-render with the new cookie
-    window.location.reload();
+    const returnTo = window.location.pathname + window.location.search;
+    // Let the SERVER set the cookie, then redirect back to the current page
+    window.location.href = `/api/set-locale?code=${code}&returnTo=${encodeURIComponent(returnTo)}`;
   };
 
   return (

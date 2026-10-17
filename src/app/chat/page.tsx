@@ -6,7 +6,7 @@ import Link from 'next/link';
 import {
   ArrowLeft, Send, MessageCircle, Loader2, Image as ImageIcon, X as XIcon,
   Copy, Trash2, Reply as ReplyIcon,
-  Clock, Check, CheckCheck,
+  Clock, Check, CheckCheck, Mic, Square,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/auth-context';
@@ -50,11 +50,14 @@ function ChatPageInner() {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
+  
+  // UPDATED: Added 'audio' to allowed types
   const [pendingMedia, setPendingMedia] = useState<{
     url: string;
-    type: 'image' | 'video';
+    type: 'image' | 'video' | 'audio';
     previewUrl: string;
   } | null>(null);
+
   const [uploading, setUploading] = useState(false);
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
   const [contextMenu, setContextMenu] = useState<{
@@ -63,6 +66,13 @@ function ChatPageInner() {
     y: number;
   } | null>(null);
   const [otherTyping, setOtherTyping] = useState(false);
+
+  // NEW: Recording states
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
@@ -203,6 +213,17 @@ function ChatPageInner() {
     };
   }, [contextMenu]);
 
+  // NEW: Cleanup recording on unmount or changing conversation
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+        mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+        mediaRecorderRef.current.stop();
+      }
+    };
+  }, [activeConv]);
+
   const handleAttach = () => fileInputRef.current?.click();
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -235,9 +256,60 @@ function ChatPageInner() {
     setPendingMedia(null);
   };
 
+  // NEW: Voice Recording Functions
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const file = new File([audioBlob], `voice-note-${Date.now()}.webm`, { type: 'audio/webm' });
+        
+        stream.getTracks().forEach(track => track.stop());
+
+        if (!activeConv) return;
+        setUploading(true);
+        setError('');
+        try {
+          const res = await uploadChatMedia(activeConv._id, file);
+          setPendingMedia({ url: res.url, type: 'audio', previewUrl: URL.createObjectURL(audioBlob) });
+        } catch (err: any) {
+          setError(err.response?.data?.message || 'Audio upload failed');
+        } finally {
+          setUploading(false);
+        }
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+      
+      timerRef.current = setInterval(() => {
+        setRecordingTime((prev) => prev + 1);
+      }, 1000);
+    } catch (err) {
+      setError('Microphone access denied or not available');
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
+  };
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if ((!text.trim() && !pendingMedia) || !activeConv || sending) return;
+    if ((!text.trim() && !pendingMedia) || !activeConv || sending || isRecording) return;
     const sendText = text.trim();
     const media = pendingMedia;
     const reply = replyingTo;
@@ -397,7 +469,7 @@ function ChatPageInner() {
                     {conv.lastMessage ? (
                       <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
                         {conv.lastMessage.mediaUrl && !conv.lastMessage.text
-                          ? t('photo')
+                          ? (conv.lastMessage as any).mediaType === 'audio' ? '🎤 Voice message' : t('photo')
                           : conv.lastMessage.text}
                       </p>
                     ) : (
@@ -552,6 +624,12 @@ function ChatPageInner() {
                                     className="w-full max-h-80 object-cover bg-black"
                                     preload="metadata"
                                   />
+                                ) : (msg.mediaType as string) === 'audio' ? (
+                                  <audio
+                                    src={getMediaUrl(msg.mediaUrl)}
+                                    controls
+                                    className="w-full min-w-[200px] max-w-[250px] h-10 px-2 py-1 rounded-lg"
+                                  />
                                 ) : (
                                   // eslint-disable-next-line @next/next/no-img-element
                                   <img
@@ -616,7 +694,7 @@ function ChatPageInner() {
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                       {replyingTo.mediaUrl && !replyingTo.text
-                        ? t('photo')
+                        ? (replyingTo as any).mediaType === 'audio' ? '🎤 Voice message' : t('photo')
                         : replyingTo.text}
                     </p>
                   </div>
@@ -638,6 +716,11 @@ function ChatPageInner() {
                         src={pendingMedia.previewUrl}
                         className="w-24 h-24 object-cover rounded-lg bg-black"
                       />
+                    ) : pendingMedia.type === 'audio' ? (
+                      <div className="w-24 h-24 rounded-lg bg-gray-100 dark:bg-gray-800 flex flex-col items-center justify-center gap-1">
+                         <Mic className="w-6 h-6 text-blue-500" />
+                         <span className="text-[10px] text-gray-500 font-medium">Audio</span>
+                      </div>
                     ) : (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -668,16 +751,16 @@ function ChatPageInner() {
                   id="chat-file-input"
                   name="file"
                   type="file"
-                  accept="image/*,video/*"
+                  accept="image/*,video/*,audio/*"
                   onChange={handleFileChange}
                   className="hidden"
                 />
                 <button
                   type="button"
                   onClick={handleAttach}
-                  disabled={uploading || sending || !activeConv}
+                  disabled={uploading || sending || !activeConv || isRecording}
                   className="p-2.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 disabled:opacity-50 transition"
-                  title="Attach image or video"
+                  title="Attach image, video, or audio"
                 >
                   {uploading ? (
                     <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
@@ -685,40 +768,72 @@ function ChatPageInner() {
                     <ImageIcon className="w-5 h-5" />
                   )}
                 </button>
-                <input
-                  id="chat-message-input"
-                  name="message"
-                  type="text"
-                  value={text}
-                  onChange={(e) => {
-                    setText(e.target.value);
-                    if (socket && activeConv) {
-                      sendTyping(socket, activeConv._id, true);
-                      if (typingTimeoutRef.current) {
-                        clearTimeout(typingTimeoutRef.current);
-                      }
-                      typingTimeoutRef.current = setTimeout(() => {
-                        if (socket && activeConv) {
-                          sendTyping(socket, activeConv._id, false);
+
+                {isRecording ? (
+                  <div className="flex-1 flex items-center justify-between bg-red-50 dark:bg-red-950/30 px-4 py-2.5 rounded-full border border-red-200 dark:border-red-900">
+                    <div className="flex items-center gap-2 text-red-500">
+                      <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                      <span className="text-sm font-medium">
+                        Recording... {Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={stopRecording}
+                      className="text-red-500 hover:text-red-600 p-1"
+                    >
+                      <Square className="w-5 h-5 fill-current" />
+                    </button>
+                  </div>
+                ) : (
+                  <input
+                    id="chat-message-input"
+                    name="message"
+                    type="text"
+                    value={text}
+                    onChange={(e) => {
+                      setText(e.target.value);
+                      if (socket && activeConv) {
+                        sendTyping(socket, activeConv._id, true);
+                        if (typingTimeoutRef.current) {
+                          clearTimeout(typingTimeoutRef.current);
                         }
-                      }, 2000);
-                    }
-                  }}
-                  placeholder={t('startMessage')}
-                  className="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-gray-800 dark:text-white rounded-full outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                  disabled={sending}
-                />
-                <button
-                  type="submit"
-                  disabled={(!text.trim() && !pendingMedia) || sending || uploading}
-                  className="bg-blue-500 hover:bg-blue-600 text-white p-2.5 rounded-full transition disabled:opacity-50"
-                >
-                  {sending ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Send className="w-4 h-4" />
-                  )}
-                </button>
+                        typingTimeoutRef.current = setTimeout(() => {
+                          if (socket && activeConv) {
+                            sendTyping(socket, activeConv._id, false);
+                          }
+                        }, 2000);
+                      }
+                    }}
+                    placeholder={t('startMessage')}
+                    className="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-gray-800 dark:text-white rounded-full outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    disabled={sending}
+                  />
+                )}
+
+                {!isRecording && !text.trim() && !pendingMedia ? (
+                  <button
+                    type="button"
+                    onClick={startRecording}
+                    disabled={uploading || !activeConv}
+                    className="bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 p-2.5 rounded-full transition disabled:opacity-50"
+                    title="Record voice note"
+                  >
+                    <Mic className="w-5 h-5" />
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    disabled={(!text.trim() && !pendingMedia) || sending || uploading || isRecording}
+                    className="bg-blue-500 hover:bg-blue-600 text-white p-2.5 rounded-full transition disabled:opacity-50"
+                  >
+                    {sending ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
+                  </button>
+                )}
               </form>
             </div>
           </div>

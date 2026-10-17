@@ -29,6 +29,9 @@ function deepMerge(base: any, override: any): any {
 export default getRequestConfig(async () => {
   const cookieStore = await cookies();
   const raw = cookieStore.get('locale')?.value as Locale | undefined;
+  // ↓↓↓ DEBUG LINE — remove after diagnosis ↓↓↓
+  console.log('[i18n debug] server sees cookie locale =', raw);
+  // ↑↑↑ DEBUG LINE ↑↑↑
   const locale: Locale = raw && locales.includes(raw) ? raw : defaultLocale;
 
   const [localeMessages, enMessages] = await Promise.all([
