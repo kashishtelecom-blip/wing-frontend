@@ -21,7 +21,7 @@ export interface ChatMessageReply {
   _id: string;
   text: string;
   mediaUrl?: string | null;
-  mediaType?: 'image' | 'video' | null;
+  mediaType?: 'image' | 'video' | 'audio' | null;
   sender: {
     _id: string;
     username: string;
@@ -36,7 +36,7 @@ export interface ChatMessage {
   sender: ChatUser;
   text: string;
   mediaUrl?: string | null;
-  mediaType?: 'image' | 'video' | null;
+  mediaType?: 'image' | 'video' | 'audio' | null;
   replyTo?: ChatMessageReply | null;
   read: boolean;
   deliveredAt?: string | null;
@@ -53,7 +53,7 @@ export interface Conversation {
     text: string;
     sender: { _id: string; username: string };
     mediaUrl?: string | null;
-    mediaType?: 'image' | 'video' | null;
+    mediaType?: 'image' | 'video' | 'audio' | null;
     createdAt: string;
     read: boolean;
   } | null;
@@ -104,7 +104,7 @@ export async function sendMessage(
   conversationId: string,
   text: string,
   mediaUrl?: string,
-  mediaType?: 'image' | 'video',
+  mediaType?: 'image' | 'video' | 'audio',
   replyTo?: string,
 ): Promise<ChatMessage> {
   const res = await api.post(
@@ -118,7 +118,7 @@ export async function sendMessage(
 export async function uploadChatMedia(
   conversationId: string,
   file: File,
-): Promise<{ url: string; type: 'image' | 'video' }> {
+): Promise<{ url: string; type: 'image' | 'video' | 'audio' }> {
   const formData = new FormData();
   formData.append('file', file);
   const res = await api.post(
