@@ -432,10 +432,10 @@ function ChatPageInner() {
   const isMyMenuMsg = menuMsg?.sender._id === user.userId;
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950">
+    <div className="h-[100dvh] flex flex-col overflow-hidden bg-white dark:bg-gray-950">
       <NavBar />
-      <main className="max-w-4xl mx-auto flex w-full" style={{ height: 'calc(100vh - 60px)' }}>
-        <div className={sidebarClass}>
+      <main className="flex-1 flex max-w-4xl mx-auto w-full overflow-hidden">
+       <div className={sidebarClass + " h-full"}>
           <div className="p-4 border-b border-gray-200 dark:border-gray-800">
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">{t('title')}</h1>
           </div>
@@ -490,7 +490,7 @@ function ChatPageInner() {
         </div>
 
         {activeConv ? (
-          <div className="flex-1 flex flex-col min-w-0">
+         <div className="flex-1 flex flex-col min-w-0 h-full relative">
             <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex items-center gap-3">
               <button
                 onClick={() => setActiveConv(null)}
@@ -685,7 +685,7 @@ function ChatPageInner() {
               </div>
             )}
 
-            <div className="border-t border-gray-200 dark:border-gray-800">
+            <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
               {replyingTo && (
                 <div className="p-3 pb-0 flex items-start gap-3">
                   <div className="flex-1 min-w-0 border-l-2 border-blue-500 pl-3">
