@@ -17,6 +17,20 @@ const icons = {
   mention: { Icon: AtSign, color: 'text-blue-500', label: 'mentioned you' },
 };
 
+function NotificationSkeleton() {
+  return (
+    <div className="flex gap-3 p-4 border-b border-gray-100 dark:border-gray-800 animate-pulse">
+      {/* Icon */}
+      <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-800 flex-shrink-0" />
+      {/* Text lines */}
+      <div className="flex-1 min-w-0 pt-1">
+        <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-3/4 mb-2" />
+        <div className="h-3 bg-gray-200 dark:bg-gray-800 rounded w-16" />
+      </div>
+    </div>
+  );
+}
+
 export default function NotificationsPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -71,8 +85,13 @@ export default function NotificationsPage() {
           )}
         </div>
 
-        {loading ? (
-          <div className="p-8 text-center text-gray-500 dark:text-gray-400">Loading...</div>
+                {loading ? (
+          <div className="flex flex-col">
+            <NotificationSkeleton />
+            <NotificationSkeleton />
+            <NotificationSkeleton />
+            <NotificationSkeleton />
+          </div>
         ) : notifications.length === 0 ? (
           <div className="p-8 text-center text-gray-500 dark:text-gray-400">
             No notifications yet. When someone likes, comments, follows, or mentions you, it will show up here.
