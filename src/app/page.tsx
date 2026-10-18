@@ -11,6 +11,7 @@ import { WhoToFollow } from '@/components/WhoToFollow';
 import { getFeed, getPublicWings, Wing } from '@/lib/wings';
 import { usePullToRefresh } from '@/lib/use-pull-to-refresh';
 import { WingCardSkeleton } from '@/components/WingCardSkeleton';
+import { subscribeToPush } from '@/lib/push';
 
 const POLL_INTERVAL_MS = 30000;
 const PAGE_SIZE = 20;
@@ -35,7 +36,12 @@ export default function Home() {
   const scrollTopTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    if (!authLoading && !user) router.push('/login');
+    if (!authLoading && !user) {
+      router.push('/login');
+    } else if (user) {
+      // Ask for push notification permission once they are logged in
+      subscribeToPush();
+    }
   }, [user, authLoading, router]);
 
   const loadWings = useCallback(async (currentTab: FeedTab, pageToLoad = 1, append = false) => {
