@@ -86,7 +86,7 @@ export function NavBar() {
       : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800');
 
   return (
-    <header className="border-b border-gray-200 dark:border-gray-800 sticky top-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur z-30">
+<header className="w-full border-b border-gray-200 dark:border-gray-800 sticky top-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur z-30">
       <div className="max-w-3xl mx-auto px-3 py-2.5 flex items-center justify-between gap-2">
         <Link href="/" className="flex items-center gap-2 flex-shrink-0">
           <div className="logo-wrap">

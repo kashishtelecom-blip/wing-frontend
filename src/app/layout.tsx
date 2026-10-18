@@ -107,7 +107,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           }}
         />
       </head>
-      <body className={inter.className + ' bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100'}>
+      <body className={inter.className + ' w-full overflow-x-hidden bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100'}>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <PwaProvider />
           <ThemeProvider>

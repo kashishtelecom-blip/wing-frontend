@@ -186,7 +186,7 @@ export default function Home() {
   const pullReady = pullDistance >= threshold;
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950">
+    <div className="min-h-screen w-full bg-white dark:bg-gray-950">
       <NavBar />
 
       {/* Pull-to-refresh indicator */}
