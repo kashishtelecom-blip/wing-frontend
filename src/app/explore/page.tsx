@@ -7,6 +7,7 @@ import { NavBar } from '@/components/NavBar';
 import { useAuth } from '@/lib/auth-context';
 import { getTrendingHashtags, getPublicWings, Wing } from '@/lib/wings';
 import { WingCard } from '@/components/WingCard';
+import { WingCardSkeleton } from '@/components/WingCardSkeleton'; // NEW
 
 export default function ExplorePage() {
   const { user, loading: authLoading } = useAuth();
@@ -39,29 +40,37 @@ export default function ExplorePage() {
       <NavBar />
       <main className="max-w-2xl mx-auto">
         {trending.length > 0 && (
-          <div className="p-4 border-b border-gray-200">
+          <div className="p-4 border-b border-gray-200 dark:border-gray-800">
             <div className="flex items-center gap-2 mb-3">
               <TrendingUp className="w-5 h-5 text-blue-500" />
-              <h2 className="font-bold text-lg">Trending now</h2>
+              <h2 className="font-bold text-lg text-gray-900 dark:text-white">Trending now</h2>
             </div>
             <div className="space-y-1">
               {trending.map((t, i) => (
-                <div key={t.hashtag} className="py-2 px-2 -mx-2 rounded hover:bg-gray-50">
-                  <p className="text-xs text-gray-500">#{i + 1} · Trending</p>
-                  <p className="font-semibold text-gray-900">#{t.hashtag}</p>
-                  <p className="text-xs text-gray-500">{t.count} wing{t.count !== 1 ? 's' : ''}</p>
+                /* FIXED: Added fallback to index (i) to prevent duplicate/undefined key crashes */
+                <div key={`${t.hashtag}-${i}`} className="py-2 px-2 -mx-2 rounded hover:bg-gray-50 dark:hover:bg-gray-900 transition cursor-pointer">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">#{i + 1} · Trending</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">#{t.hashtag}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t.count} wing{t.count !== 1 ? 's' : ''}</p>
                 </div>
               ))}
             </div>
           </div>
         )}
-        <div className="p-4 border-b border-gray-200">
-          <h2 className="font-bold text-lg">Latest wings</h2>
+        
+        <div className="p-4 border-b border-gray-200 dark:border-gray-800">
+          <h2 className="font-bold text-lg text-gray-900 dark:text-white">Latest wings</h2>
         </div>
+
+        {/* NEW: Replaced text loader with Skeleton Loaders */}
         {loading ? (
-          <div className="p-8 text-center text-gray-500">Loading...</div>
+          <div className="flex flex-col">
+            <WingCardSkeleton />
+            <WingCardSkeleton />
+            <WingCardSkeleton />
+          </div>
         ) : wings.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">Nothing here yet</div>
+          <div className="p-8 text-center text-gray-500 dark:text-gray-400">Nothing here yet</div>
         ) : (
           wings.map((w) => <WingCard key={w._id} wing={w} />)
         )}
