@@ -233,7 +233,7 @@ function ChatPageInner() {
       setError('Only images or videos allowed');
       return;
     }
-    if (file.size > 50 * 1024 * 1024) {
+    if (file.size > 500 * 1024 * 1024) {
       setError('File too large (max 50MB)');
       return;
     }

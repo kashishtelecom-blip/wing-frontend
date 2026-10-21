@@ -11,8 +11,8 @@ interface Props {
   onPosted: () => void;
 }
 
-const IMAGE_MAX = 5 * 1024 * 1024;
-const VIDEO_MAX = 50 * 1024 * 1024;
+const IMAGE_MAX = 50 * 1024 * 1024;
+const VIDEO_MAX = 500 * 1024 * 1024;
 
 export function PostComposer({ onPosted }: Props) {
   const t = useTranslations('composer');
