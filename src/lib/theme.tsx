@@ -21,7 +21,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const saved = (safeStorage.getItem('wing_theme') as Theme) || 'light';
-    safeStorage.setItem('wing_theme', next);
     setTheme(saved);
     if (saved === 'dark') {
       document.documentElement.classList.add('dark');
@@ -34,7 +33,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const toggleTheme = () => {
     const next = theme === 'dark' ? 'light' : 'dark';
     setTheme(next);
-    localStorage.setItem('wing_theme', next);
+    safeStorage.setItem('wing_theme', next);
     if (next === 'dark') {
       document.documentElement.classList.add('dark');
     } else {

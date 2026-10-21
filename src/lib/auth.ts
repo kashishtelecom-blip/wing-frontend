@@ -10,25 +10,22 @@ export interface AuthUser {
 export function saveToken(token: string) {
   if (typeof window === 'undefined') return;
   safeStorage.setItem('wing_token', token);
-return safeStorage.getItem('wing_token');
-safeStorage.removeItem('wing_token');
 }
 
 export function getToken(): string | null {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem('wing_token');
+  return safeStorage.getItem('wing_token');
 }
 
 export function clearToken() {
   if (typeof window === 'undefined') return;
-  localStorage.removeItem('wing_token');
+  safeStorage.removeItem('wing_token');
 }
 
 export function isAuthenticated(): boolean {
   return !!getToken();
 }
 
-/** Decode the JWT payload (base64 middle segment) — no signature check */
 export function getUserFromToken(): AuthUser | null {
   const token = getToken();
   if (!token) return null;

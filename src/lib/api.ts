@@ -11,11 +11,9 @@ export const api = axios.create({
   },
 });
 
-// Attach JWT from localStorage on every request
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
     const token = safeStorage.getItem('wing_token');
-    safeStorage.removeItem('wing_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -23,7 +21,6 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle 401 globally — clear token and redirect to login
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -32,7 +29,7 @@ api.interceptors.response.use(
       typeof window !== 'undefined' &&
       !window.location.pathname.startsWith('/login')
     ) {
-      localStorage.removeItem('wing_token');
+      safeStorage.removeItem('wing_token');
       window.location.href = '/login';
     }
     return Promise.reject(error);
