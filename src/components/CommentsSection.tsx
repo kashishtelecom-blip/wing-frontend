@@ -10,7 +10,8 @@ import { Avatar } from './Avatar';
 import { VerifiedBadge } from './VerifiedBadge';
 import { RichText } from './RichText';
 import { timeAgo } from '@/lib/time';
-import { safeStorage } from './safe-storage';
+import { safeStorage } from '../lib/safe-storage';
+
 import {
   Comment, getComments, createComment, deleteComment,
   likeComment, unlikeComment,
