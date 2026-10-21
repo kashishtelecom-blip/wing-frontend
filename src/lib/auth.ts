@@ -1,3 +1,5 @@
+import { safeStorage } from './safe-storage';
+
 export interface AuthUser {
   userId: string;
   email: string;
@@ -7,7 +9,9 @@ export interface AuthUser {
 
 export function saveToken(token: string) {
   if (typeof window === 'undefined') return;
-  localStorage.setItem('wing_token', token);
+  safeStorage.setItem('wing_token', token);
+return safeStorage.getItem('wing_token');
+safeStorage.removeItem('wing_token');
 }
 
 export function getToken(): string | null {

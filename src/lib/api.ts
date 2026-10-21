@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { safeStorage } from './safe-storage';
 
 export const API_URL =
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
@@ -13,7 +14,8 @@ export const api = axios.create({
 // Attach JWT from localStorage on every request
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('wing_token');
+    const token = safeStorage.getItem('wing_token');
+    safeStorage.removeItem('wing_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

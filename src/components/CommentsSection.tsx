@@ -10,6 +10,7 @@ import { Avatar } from './Avatar';
 import { VerifiedBadge } from './VerifiedBadge';
 import { RichText } from './RichText';
 import { timeAgo } from '@/lib/time';
+import { safeStorage } from './safe-storage';
 import {
   Comment, getComments, createComment, deleteComment,
   likeComment, unlikeComment,
@@ -26,7 +27,8 @@ const LS_REPOSTED = 'wing_comment_reposts';
 function loadSet(key: string): Set<string> {
   if (typeof window === 'undefined') return new Set();
   try {
-    const raw = localStorage.getItem(key);
+    const raw = safeStorage.getItem(key);
+    safeStorage.setItem(key, JSON.stringify(Array.from(set)));
     return new Set(raw ? JSON.parse(raw) : []);
   } catch {
     return new Set();
