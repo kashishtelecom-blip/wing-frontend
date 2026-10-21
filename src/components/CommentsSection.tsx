@@ -10,7 +10,7 @@ import { Avatar } from './Avatar';
 import { VerifiedBadge } from './VerifiedBadge';
 import { RichText } from './RichText';
 import { timeAgo } from '@/lib/time';
-import { safeStorage } from '../lib/safe-storage';
+import { safeStorage } from '@/lib/safe-storage';
 
 import {
   Comment, getComments, createComment, deleteComment,
@@ -29,7 +29,6 @@ function loadSet(key: string): Set<string> {
   if (typeof window === 'undefined') return new Set();
   try {
     const raw = safeStorage.getItem(key);
-    safeStorage.setItem(key, JSON.stringify(Array.from(set)));
     return new Set(raw ? JSON.parse(raw) : []);
   } catch {
     return new Set();
@@ -39,7 +38,7 @@ function loadSet(key: string): Set<string> {
 function saveSet(key: string, set: Set<string>) {
   if (typeof window === 'undefined') return;
   try {
-    localStorage.setItem(key, JSON.stringify(Array.from(set)));
+    safeStorage.setItem(key, JSON.stringify(Array.from(set)));
   } catch {}
 }
 
@@ -131,7 +130,6 @@ export function CommentsSection({ wingId, commentsCount, onCountChange }: Props)
     const prevCount = comment.likesCount || 0;
     const nextCount = wasLiked ? Math.max(0, prevCount - 1) : prevCount + 1;
 
-    // Optimistic update
     setComments((prev) =>
       prev.map((c) =>
         c._id === comment._id
@@ -144,7 +142,6 @@ export function CommentsSection({ wingId, commentsCount, onCountChange }: Props)
       const res = wasLiked
         ? await unlikeComment(wingId, comment._id)
         : await likeComment(wingId, comment._id);
-      // Sync with server truth
       setComments((prev) =>
         prev.map((c) =>
           c._id === comment._id
@@ -153,7 +150,6 @@ export function CommentsSection({ wingId, commentsCount, onCountChange }: Props)
         ),
       );
     } catch (err) {
-      // Revert
       setComments((prev) =>
         prev.map((c) =>
           c._id === comment._id
