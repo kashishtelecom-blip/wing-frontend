@@ -12,7 +12,7 @@ import { PwaProvider } from '@/components/PwaProvider';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 
-// ← ADDED: force every request to re-render so the locale cookie is always fresh
+// ← Force every request to re-render so the locale cookie is always fresh
 export const dynamic = 'force-dynamic';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -98,8 +98,51 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const messages = await getMessages();
 
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning className="overflow-x-hidden">
       <head>
+        {/* Polyfill: replace localStorage/sessionStorage with in-memory fallback if blocked */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                function makeMockStore() {
+                  var mem = {};
+                  return {
+                    getItem: function(k) { return Object.prototype.hasOwnProperty.call(mem, k) ? mem[k] : null; },
+                    setItem: function(k, v) { mem[k] = String(v); },
+                    removeItem: function(k) { delete mem[k]; },
+                    clear: function() { mem = {}; },
+                    key: function(i) { return Object.keys(mem)[i] || null; },
+                    get length() { return Object.keys(mem).length; }
+                  };
+                }
+                try {
+                  window.localStorage.getItem('__test__');
+                } catch (e) {
+                  try {
+                    Object.defineProperty(window, 'localStorage', {
+                      value: makeMockStore(),
+                      writable: true,
+                      configurable: true
+                    });
+                  } catch (e2) {}
+                }
+                try {
+                  window.sessionStorage.getItem('__test__');
+                } catch (e) {
+                  try {
+                    Object.defineProperty(window, 'sessionStorage', {
+                      value: makeMockStore(),
+                      writable: true,
+                      configurable: true
+                    });
+                  } catch (e2) {}
+                }
+              })();
+            `,
+          }}
+        />
+        {/* Dark mode: applied before hydration to avoid flash */}
         <script
           dangerouslySetInnerHTML={{
             __html:
