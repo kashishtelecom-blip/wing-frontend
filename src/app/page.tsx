@@ -6,19 +6,20 @@ import { RefreshCw, ArrowUp, Loader2 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { NavBar } from '@/components/NavBar';
 import { WingCard } from '@/components/WingCard';
+import { WingCardSkeleton } from '@/components/WingCardSkeleton';
 import { PostComposer } from '@/components/PostComposer';
 import { WhoToFollow } from '@/components/WhoToFollow';
+import { StoryRing } from '@/components/StoryRing';
+import { StoryViewer } from '@/components/StoryViewer';
 import { getFeed, getPublicWings, Wing } from '@/lib/wings';
 import { usePullToRefresh } from '@/lib/use-pull-to-refresh';
-import { WingCardSkeleton } from '@/components/WingCardSkeleton';
-import { subscribeToPush } from '@/lib/push';
+import { GroupedStories } from '@/lib/stories';
 
 const POLL_INTERVAL_MS = 30000;
 const PAGE_SIZE = 20;
 const SCROLL_TOP_TRIGGER_DELAY = 800;
 
 type FeedTab = 'foryou' | 'following';
-
 
 export default function Home() {
   const { user, loading: authLoading } = useAuth();
@@ -35,13 +36,11 @@ export default function Home() {
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const scrollTopTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  const [storyGroups, setStoryGroups] = useState<GroupedStories[]>([]);
+  const [activeStoryGroup, setActiveStoryGroup] = useState<number | null>(null);
+
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/login');
-    } else if (user) {
-      // Ask for push notification permission once they are logged in
-      subscribeToPush();
-    }
+    if (!authLoading && !user) router.push('/login');
   }, [user, authLoading, router]);
 
   const loadWings = useCallback(async (currentTab: FeedTab, pageToLoad = 1, append = false) => {
@@ -79,7 +78,6 @@ export default function Home() {
     }
   }, [authLoading, user, tab, loadWings]);
 
-  // Infinite scroll
   useEffect(() => {
     if (!hasMore || loading || loadingMore) return;
     const el = loadMoreRef.current;
@@ -98,7 +96,6 @@ export default function Home() {
     return () => observer.disconnect();
   }, [hasMore, loading, loadingMore, page, tab, loadWings]);
 
-  // Poll for new wings
   useEffect(() => {
     if (authLoading || !user || tab !== 'following') return;
     const interval = setInterval(async () => {
@@ -115,7 +112,6 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [authLoading, user, tab]);
 
-  // Auto-refresh when user scrolls back to top (after a delay)
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY < 5) {
@@ -189,7 +185,6 @@ export default function Home() {
     <div className="min-h-screen w-full bg-white dark:bg-gray-950">
       <NavBar />
 
-      {/* Pull-to-refresh indicator */}
       <div
         className="fixed top-14 left-0 right-0 flex justify-center pointer-events-none z-20 transition-opacity"
         style={{
@@ -241,10 +236,16 @@ export default function Home() {
           </button>
         )}
 
+        <StoryRing
+          onOpenStory={(groups, index) => {
+            setStoryGroups(groups);
+            setActiveStoryGroup(index);
+          }}
+        />
+
         {tab === 'foryou' && <WhoToFollow />}
         <PostComposer onPosted={handlePosted} />
 
-        {/* NEW: Replaced the text loader with skeletons */}
         {loading ? (
           <div className="flex flex-col">
             <WingCardSkeleton />
@@ -290,6 +291,14 @@ export default function Home() {
           </>
         )}
       </main>
+
+      {activeStoryGroup !== null && (
+        <StoryViewer
+          groups={storyGroups}
+          initialGroupIndex={activeStoryGroup}
+          onClose={() => setActiveStoryGroup(null)}
+        />
+      )}
     </div>
   );
 }
