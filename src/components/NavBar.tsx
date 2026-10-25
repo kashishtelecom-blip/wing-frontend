@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import {
-  Bell, Home, Search, MessageCircle, Clock, User, Flame, Sun, Moon, Compass,
+  Bell, Home, Search, MessageCircle, Clock, User, Flame, Sun, Moon, Compass, Music,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { useTheme } from '@/lib/theme';

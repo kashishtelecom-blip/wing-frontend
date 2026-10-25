@@ -1,9 +1,17 @@
 import api from './api';
 
+export interface StoryMusic {
+  previewUrl: string;
+  title: string;
+  artist: string;
+  artworkUrl: string;
+}
+
 export interface StoryItem {
   _id: string;
   mediaUrl: string;
   mediaType: 'image' | 'video';
+  music?: StoryMusic | null;
   createdAt: string;
   hasViewed: boolean;
 }
@@ -39,8 +47,8 @@ export async function uploadStoryMedia(file: File): Promise<{ mediaUrl: string }
   return res.data;
 }
 
-export async function createStory(mediaUrl: string, mediaType: 'image' | 'video') {
-  const res = await api.post('/stories', { mediaUrl, mediaType });
+export async function createStory(mediaUrl: string, mediaType: 'image' | 'video', music?: StoryMusic) {
+  const res = await api.post('/stories', { mediaUrl, mediaType, music });
   return res.data;
 }
 
