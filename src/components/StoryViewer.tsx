@@ -44,42 +44,6 @@ export function StoryViewer({ groups, initialGroupIndex, onClose }: Props) {
     onClose();
   };
 
-  useEffect(() => {
-    if (!currentStory) return;
-    
-    setProgress(0);
-    markStoryViewed(currentStory._id);
-
-    if (currentStory.music?.previewUrl) {
-      if (!audioRef.current) {
-        audioRef.current = new Audio(currentStory.music.previewUrl);
-      } else {
-        audioRef.current.src = currentStory.music.previewUrl;
-      }
-      
-      audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(e => console.log('Audio autoplay blocked', e));
-    } else {
-      stopAudio();
-    }
-
-    const interval = setInterval(() => {
-      setProgress(p => {
-        if (p >= 100) {
-          clearInterval(interval);
-          handleNext();
-          return 0;
-        }
-        return p + 1; // 15 seconds total
-      });
-    }, 150);
-
-    return () => {
-      clearInterval(interval);
-      stopAudio();
-    };
-  }, [storyIndex, groupIndex, currentStory]);
-
   const handleNext = () => {
     if (storyIndex < currentGroup.stories.length - 1) {
       setStoryIndex(storyIndex + 1);
@@ -99,6 +63,50 @@ export function StoryViewer({ groups, initialGroupIndex, onClose }: Props) {
       setStoryIndex(groups[groupIndex - 1].stories.length - 1);
     }
   };
+
+  useEffect(() => {
+    if (!currentStory) return;
+    
+    setProgress(0);
+    markStoryViewed(currentStory._id);
+
+    if (currentStory.music?.previewUrl) {
+      if (!audioRef.current) {
+        audioRef.current = new Audio(currentStory.music.previewUrl);
+      } else {
+        audioRef.current.src = currentStory.music.previewUrl;
+      }
+      
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(e => console.log('Audio autoplay blocked', e));
+    } else {
+      stopAudio();
+    }
+
+    // 1. Progress bar animation (15 seconds total)
+    const interval = setInterval(() => {
+      setProgress(p => Math.min(p + 1, 100));
+    }, 150);
+
+    // 2. Timer to advance story after 15 seconds
+    const timer = setTimeout(() => {
+      if (storyIndex < currentGroup.stories.length - 1) {
+        setStoryIndex(storyIndex + 1);
+      } else if (groupIndex < groups.length - 1) {
+        setGroupIndex(groupIndex + 1);
+        setStoryIndex(0);
+      } else {
+        handleClose();
+      }
+    }, 15000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timer);
+      stopAudio();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storyIndex, groupIndex, currentStory]);
 
   const fetchViewers = async () => {
     if (!currentStory) return;
