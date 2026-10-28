@@ -2,11 +2,13 @@
 
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
-import { X, Eye, Send, MessageCircle } from 'lucide-react';
-import { GroupedStories, StoryItem, markStoryViewed, addStoryComment, getStoryComments, StoryComment } from '@/lib/stories';
+import { useRouter } from 'next/navigation';
+import { X, Eye, Send } from 'lucide-react';
+import { GroupedStories, StoryItem, markStoryViewed } from '@/lib/stories';
 import { getMediaUrl } from '@/lib/media';
 import { Avatar } from './Avatar';
 import { useAuth } from '@/lib/auth-context';
+import { startConversation, sendMessage } from '@/lib/chat';
 import api from '@/lib/api';
 
 interface Props {
@@ -17,6 +19,7 @@ interface Props {
 
 export function StoryViewer({ groups, initialGroupIndex, onClose }: Props) {
   const { user } = useAuth();
+  const router = useRouter();
   const [groupIndex, setGroupIndex] = useState(initialGroupIndex);
   const [storyIndex, setStoryIndex] = useState(0);
   const [progress, setProgress] = useState(0);
@@ -26,12 +29,10 @@ export function StoryViewer({ groups, initialGroupIndex, onClose }: Props) {
   const [viewers, setViewers] = useState<any[]>([]);
   const [loadingViewers, setLoadingViewers] = useState(false);
 
-  // Comment State
-  const [showComments, setShowComments] = useState(false);
-  const [comments, setComments] = useState<StoryComment[]>([]);
-  const [commentText, setCommentText] = useState('');
-  const [sendingComment, setSendingComment] = useState(false);
-  const isPausedRef = useRef(false); // Pause timer when typing
+  // DM Reply State
+  const [replyText, setReplyText] = useState('');
+  const [sendingReply, setSendingReply] = useState(false);
+  const isPausedRef = useRef(false);
 
   const currentGroup = groups[groupIndex];
   const currentStory = currentGroup?.stories[storyIndex];
@@ -44,6 +45,13 @@ export function StoryViewer({ groups, initialGroupIndex, onClose }: Props) {
       audioRef.current.removeAttribute('src'); 
       audioRef.current.load();
     }
+  };
+
+  // 👇 MOVED THIS INSIDE THE COMPONENT
+  const setIsPaused = (paused: boolean) => {
+    isPausedRef.current = paused;
+    if (paused && audioRef.current) audioRef.current.pause();
+    if (!paused && audioRef.current) audioRef.current.play().catch(() => {});
   };
 
   const handleClose = () => {
@@ -62,14 +70,12 @@ export function StoryViewer({ groups, initialGroupIndex, onClose }: Props) {
     else if (groupIndex > 0) { setGroupIndex(groupIndex - 1); setStoryIndex(groups[groupIndex - 1].stories.length - 1); }
   };
 
-  // Timer logic (respects pause state)
   useEffect(() => {
-    if (!currentStory || isPausedRef.current) return;
+    if (!currentStory) return;
     
     setProgress(0);
     markStoryViewed(currentStory._id);
 
-    // Play music if exists
     if (currentStory.music?.previewUrl) {
       if (!audioRef.current) audioRef.current = new Audio(currentStory.music.previewUrl);
       else audioRef.current.src = currentStory.music.previewUrl;
@@ -81,7 +87,7 @@ export function StoryViewer({ groups, initialGroupIndex, onClose }: Props) {
     }
 
     const interval = setInterval(() => {
-      if (isPausedRef.current) return; // Skip incrementing if paused
+      if (isPausedRef.current) return;
       
       setProgress(p => {
         if (p >= 100) {
@@ -99,6 +105,26 @@ export function StoryViewer({ groups, initialGroupIndex, onClose }: Props) {
     };
   }, [storyIndex, groupIndex, currentStory]);
 
+  const handleSendReply = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!replyText.trim() || !currentGroup.author._id) return;
+    
+    setSendingReply(true);
+    try {
+      const conv = await startConversation(currentGroup.author._id);
+      await sendMessage(conv._id, `Replied to your story: "${replyText.trim()}"`);
+      
+      setReplyText('');
+      handleClose();
+      router.push('/chat');
+    } catch (err) {
+      console.error('Failed to send reply', err);
+      alert('Failed to send reply. Try again.');
+    } finally {
+      setSendingReply(false);
+    }
+  };
+
   const fetchViewers = async () => {
     if (!currentStory) return;
     setLoadingViewers(true);
@@ -106,43 +132,6 @@ export function StoryViewer({ groups, initialGroupIndex, onClose }: Props) {
       const res = await api.get(`/stories/${currentStory._id}/viewers`);
       setViewers(res.data || []);
     } catch (err) { console.error(err); } finally { setLoadingViewers(false); }
-  };
-
-  const fetchComments = async () => {
-    if (!currentStory) return;
-    try {
-      const data = await getStoryComments(currentStory._id);
-      setComments(data);
-    } catch (err) { console.error(err); }
-  };
-
-  const handleSendComment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!commentText.trim() || !currentStory) return;
-    
-    setSendingComment(true);
-    try {
-      const newComment = await addStoryComment(currentStory._id, commentText.trim());
-      setComments(prev => [...prev, newComment]);
-      setCommentText('');
-      isPausedRef.current = false;
-    } catch (err) {
-      console.error('Failed to send comment', err);
-    } finally {
-      setSendingComment(false);
-    }
-  };
-
-  const handleOpenComments = () => {
-    setShowComments(true);
-    setIsPaused(true);
-    fetchComments();
-  };
-
-  const setIsPaused = (paused: boolean) => {
-    isPausedRef.current = paused;
-    if (paused && audioRef.current) audioRef.current.pause();
-    if (!paused && audioRef.current) audioRef.current.play().catch(() => {});
   };
 
   if (!currentStory) return null;
@@ -197,38 +186,34 @@ export function StoryViewer({ groups, initialGroupIndex, onClose }: Props) {
 
         {/* BOTTOM CONTROLS */}
         <div className="absolute bottom-0 w-full p-3 z-30 flex items-center gap-2">
-          {/* Comment Input */}
-          <form onSubmit={handleSendComment} className="flex-1 relative">
-            <input
-              type="text"
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              onFocus={() => setIsPaused(true)}
-              onBlur={() => setIsPaused(false)}
-              placeholder="Send message..."
-              className="w-full bg-black/40 border border-white/30 rounded-full pl-4 pr-10 py-2.5 text-white placeholder-gray-300 text-sm outline-none focus:border-white"
-            />
-            {commentText.trim() && (
-              <button type="submit" disabled={sendingComment} className="absolute right-2 top-1/2 -translate-y-1/2 text-white p-1">
-                {sendingComment ? <span className="text-[10px]">...</span> : <Send className="w-4 h-4" />}
-              </button>
-            )}
-          </form>
-
-          {/* View Comments Button (if comments exist) */}
-          {comments.length > 0 && (
-             <button onClick={handleOpenComments} className="p-2.5 bg-black/40 rounded-full text-white border border-white/30">
-               <MessageCircle className="w-5 h-5" />
-             </button>
+          
+          {/* DM Reply Input (Only if viewing someone else's story) */}
+          {!isMyStory && user && (
+            <form onSubmit={handleSendReply} className="flex-1 relative">
+              <input
+                type="text"
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                onFocus={() => setIsPaused(true)}
+                onBlur={() => setIsPaused(false)}
+                placeholder="Send message..."
+                className="w-full bg-black/40 border border-white/30 rounded-full pl-4 pr-10 py-2.5 text-white placeholder-gray-300 text-sm outline-none focus:border-white"
+              />
+              {replyText.trim() && (
+                <button type="submit" disabled={sendingReply} className="absolute right-2 top-1/2 -translate-y-1/2 text-white p-1">
+                  {sendingReply ? <span className="text-[10px]">...</span> : <Send className="w-4 h-4" />}
+                </button>
+              )}
+            </form>
           )}
 
           {/* Viewers Button (Only for my story) */}
           {isMyStory && (
             <button 
               onClick={() => { setShowViewers(true); fetchViewers(); }}
-              className="bg-black/40 p-2.5 rounded-full border border-white/30 text-white flex items-center gap-1 text-xs font-semibold"
+              className="flex-1 bg-black/40 p-2.5 rounded-full border border-white/30 text-white flex items-center justify-center gap-2 text-sm font-semibold hover:bg-black/60 transition"
             >
-              <Eye className="w-4 h-4" /> {currentStory.viewsCount || 0}
+              <Eye className="w-5 h-5" /> Viewers ({currentStory.viewsCount || 0})
             </button>
           )}
         </div>
@@ -237,7 +222,7 @@ export function StoryViewer({ groups, initialGroupIndex, onClose }: Props) {
         {showViewers && (
           <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gray-900 rounded-t-2xl z-40 flex flex-col animate-slide-up">
             <div className="p-4 border-b border-gray-800 flex items-center justify-between sticky top-0 bg-gray-900 z-10">
-              <h3 className="text-white font-bold text-lg">Story Viewers ({viewers.length})</h3>
+              <h3 className="text-white font-bold text-lg">Story Viewers</h3>
               <button onClick={() => setShowViewers(false)} className="text-gray-400 p-1 bg-gray-800 rounded-full"><X className="w-5 h-5" /></button>
             </div>
             <div className="flex-1 overflow-y-auto p-2">
@@ -254,33 +239,6 @@ export function StoryViewer({ groups, initialGroupIndex, onClose }: Props) {
                       <p className="text-gray-400 text-xs">@{v.username}</p>
                     </div>
                   </Link>
-                ))
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* COMMENTS MODAL (Slide up when clicking the comment icon) */}
-        {showComments && (
-          <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gray-900 rounded-t-2xl z-40 flex flex-col animate-slide-up">
-            <div className="p-4 border-b border-gray-800 flex items-center justify-between sticky top-0 bg-gray-900 z-10">
-              <h3 className="text-white font-bold text-lg">Comments</h3>
-              <button onClick={() => { setShowComments(false); setIsPaused(false); }} className="text-gray-400 p-1 bg-gray-800 rounded-full"><X className="w-5 h-5" /></button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {comments.length === 0 ? (
-                <p className="text-gray-500 text-center mt-4">No comments yet.</p>
-              ) : (
-                comments.map((c) => (
-                  <div key={c._id} className="flex gap-3">
-                    <Avatar user={c.author} size="sm" linkTo={false} />
-                    <div>
-                      <p className="text-white text-sm">
-                        <span className="font-bold mr-2">{c.author.username}</span>
-                        {c.text}
-                      </p>
-                    </div>
-                  </div>
                 ))
               )}
             </div>
