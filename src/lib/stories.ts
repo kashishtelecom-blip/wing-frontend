@@ -12,6 +12,7 @@ export interface StoryItem {
   mediaUrl: string;
   mediaType: 'image' | 'video';
   music?: StoryMusic | null;
+  viewsCount: number; 
   createdAt: string;
   hasViewed: boolean;
 }

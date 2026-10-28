@@ -30,12 +30,10 @@ export function StoryViewer({ groups, initialGroupIndex, onClose }: Props) {
   const currentStory = currentGroup?.stories[storyIndex];
   const isMyStory = user?.userId === currentGroup?.author._id;
 
-  // Function to stop audio cleanly
   const stopAudio = () => {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
-      // Clear the source to force the browser to stop buffering
       audioRef.current.removeAttribute('src'); 
       audioRef.current.load();
     }
@@ -52,7 +50,6 @@ export function StoryViewer({ groups, initialGroupIndex, onClose }: Props) {
     setProgress(0);
     markStoryViewed(currentStory._id);
 
-    // Play music if exists
     if (currentStory.music?.previewUrl) {
       if (!audioRef.current) {
         audioRef.current = new Audio(currentStory.music.previewUrl);
@@ -63,7 +60,6 @@ export function StoryViewer({ groups, initialGroupIndex, onClose }: Props) {
       audioRef.current.currentTime = 0;
       audioRef.current.play().catch(e => console.log('Audio autoplay blocked', e));
     } else {
-      // If the next story has NO music, stop the previous song
       stopAudio();
     }
 
@@ -74,11 +70,10 @@ export function StoryViewer({ groups, initialGroupIndex, onClose }: Props) {
           handleNext();
           return 0;
         }
-        return p + 1; // Increment by 1% every 150ms (100 * 150ms = 15 seconds)
+        return p + 1; // 15 seconds total
       });
     }, 150);
 
-    // CLEANUP: This runs when the story changes OR the modal closes
     return () => {
       clearInterval(interval);
       stopAudio();
@@ -92,7 +87,7 @@ export function StoryViewer({ groups, initialGroupIndex, onClose }: Props) {
       setGroupIndex(groupIndex + 1);
       setStoryIndex(0);
     } else {
-      handleClose(); // Use handleClose to stop music
+      handleClose();
     }
   };
 
@@ -179,7 +174,7 @@ export function StoryViewer({ groups, initialGroupIndex, onClose }: Props) {
             onClick={handleOpenViewers}
             className="absolute bottom-4 left-4 z-20 flex items-center gap-2 bg-black/60 backdrop-blur-md px-3 py-2 rounded-full border border-white/20 text-white text-xs font-semibold hover:bg-black/80 transition"
           >
-            <Eye className="w-4 h-4" /> Viewers
+            <Eye className="w-4 h-4" /> Viewers ({currentStory.viewsCount || 0})
           </button>
         )}
 
