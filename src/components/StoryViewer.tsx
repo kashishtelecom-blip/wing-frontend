@@ -111,12 +111,18 @@ export function StoryViewer({ groups, initialGroupIndex, onClose }: Props) {
     
     setSendingReply(true);
     try {
+      // 1. Find or create the DM conversation
       const conv = await startConversation(currentGroup.author._id);
+      
+      // 2. Send the message
       await sendMessage(conv._id, `Replied to your story: "${replyText.trim()}"`);
       
+      // 3. Clear the input and resume the story
       setReplyText('');
-      handleClose();
-      router.push('/chat');
+      setIsPaused(false); 
+      
+      // OPTIONAL: Show a tiny "Sent" alert (without closing the story)
+      // alert('Reply sent to DM!'); 
     } catch (err) {
       console.error('Failed to send reply', err);
       alert('Failed to send reply. Try again.');
@@ -124,7 +130,6 @@ export function StoryViewer({ groups, initialGroupIndex, onClose }: Props) {
       setSendingReply(false);
     }
   };
-
   const fetchViewers = async () => {
     if (!currentStory) return;
     setLoadingViewers(true);
