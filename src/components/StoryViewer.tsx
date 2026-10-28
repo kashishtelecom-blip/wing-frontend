@@ -74,9 +74,9 @@ export function StoryViewer({ groups, initialGroupIndex, onClose }: Props) {
           handleNext();
           return 0;
         }
-        return p + 2;
+        return p + 1; // Increment by 1% every 150ms (100 * 150ms = 15 seconds)
       });
-    }, 100);
+    }, 150);
 
     // CLEANUP: This runs when the story changes OR the modal closes
     return () => {
