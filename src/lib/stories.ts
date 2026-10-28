@@ -12,7 +12,7 @@ export interface StoryItem {
   mediaUrl: string;
   mediaType: 'image' | 'video';
   music?: StoryMusic | null;
-  viewsCount: number; 
+  viewsCount: number;
   createdAt: string;
   hasViewed: boolean;
 }
@@ -27,6 +27,18 @@ export interface GroupedStories {
   };
   stories: StoryItem[];
   hasUnseen: boolean;
+}
+
+export interface StoryComment {
+  _id: string;
+  text: string;
+  createdAt: string;
+  author: {
+    _id: string;
+    name: string;
+    username: string;
+    avatarUrl: string;
+  };
 }
 
 export async function getStoriesFeed(): Promise<GroupedStories[]> {
@@ -57,4 +69,20 @@ export async function markStoryViewed(storyId: string) {
   try {
     await api.post(`/stories/${storyId}/view`);
   } catch {}
+}
+
+// 👇 NEW: Story Comments API
+export async function addStoryComment(storyId: string, text: string): Promise<StoryComment> {
+  const res = await api.post(`/stories/${storyId}/comments`, { text });
+  return res.data;
+}
+
+export async function getStoryComments(storyId: string): Promise<StoryComment[]> {
+  try {
+    const res = await api.get(`/stories/${storyId}/comments`);
+    return res.data || [];
+  } catch (err) {
+    console.error('Failed to load comments', err);
+    return [];
+  }
 }

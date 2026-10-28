@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
-import { X, Eye } from 'lucide-react';
-import { GroupedStories, StoryItem, markStoryViewed } from '@/lib/stories';
+import { X, Eye, Send, MessageCircle } from 'lucide-react';
+import { GroupedStories, StoryItem, markStoryViewed, addStoryComment, getStoryComments, StoryComment } from '@/lib/stories';
 import { getMediaUrl } from '@/lib/media';
 import { Avatar } from './Avatar';
 import { useAuth } from '@/lib/auth-context';
@@ -26,6 +26,13 @@ export function StoryViewer({ groups, initialGroupIndex, onClose }: Props) {
   const [viewers, setViewers] = useState<any[]>([]);
   const [loadingViewers, setLoadingViewers] = useState(false);
 
+  // Comment State
+  const [showComments, setShowComments] = useState(false);
+  const [comments, setComments] = useState<StoryComment[]>([]);
+  const [commentText, setCommentText] = useState('');
+  const [sendingComment, setSendingComment] = useState(false);
+  const isPausedRef = useRef(false); // Pause timer when typing
+
   const currentGroup = groups[groupIndex];
   const currentStory = currentGroup?.stories[storyIndex];
   const isMyStory = user?.userId === currentGroup?.author._id;
@@ -45,37 +52,27 @@ export function StoryViewer({ groups, initialGroupIndex, onClose }: Props) {
   };
 
   const handleNext = () => {
-    if (storyIndex < currentGroup.stories.length - 1) {
-      setStoryIndex(storyIndex + 1);
-    } else if (groupIndex < groups.length - 1) {
-      setGroupIndex(groupIndex + 1);
-      setStoryIndex(0);
-    } else {
-      handleClose();
-    }
+    if (storyIndex < currentGroup.stories.length - 1) setStoryIndex(storyIndex + 1);
+    else if (groupIndex < groups.length - 1) { setGroupIndex(groupIndex + 1); setStoryIndex(0); }
+    else handleClose();
   };
 
   const handlePrev = () => {
-    if (storyIndex > 0) {
-      setStoryIndex(storyIndex - 1);
-    } else if (groupIndex > 0) {
-      setGroupIndex(groupIndex - 1);
-      setStoryIndex(groups[groupIndex - 1].stories.length - 1);
-    }
+    if (storyIndex > 0) setStoryIndex(storyIndex - 1);
+    else if (groupIndex > 0) { setGroupIndex(groupIndex - 1); setStoryIndex(groups[groupIndex - 1].stories.length - 1); }
   };
 
+  // Timer logic (respects pause state)
   useEffect(() => {
-    if (!currentStory) return;
+    if (!currentStory || isPausedRef.current) return;
     
     setProgress(0);
     markStoryViewed(currentStory._id);
 
+    // Play music if exists
     if (currentStory.music?.previewUrl) {
-      if (!audioRef.current) {
-        audioRef.current = new Audio(currentStory.music.previewUrl);
-      } else {
-        audioRef.current.src = currentStory.music.previewUrl;
-      }
+      if (!audioRef.current) audioRef.current = new Audio(currentStory.music.previewUrl);
+      else audioRef.current.src = currentStory.music.previewUrl;
       
       audioRef.current.currentTime = 0;
       audioRef.current.play().catch(e => console.log('Audio autoplay blocked', e));
@@ -83,29 +80,23 @@ export function StoryViewer({ groups, initialGroupIndex, onClose }: Props) {
       stopAudio();
     }
 
-    // 1. Progress bar animation (15 seconds total)
     const interval = setInterval(() => {
-      setProgress(p => Math.min(p + 1, 100));
+      if (isPausedRef.current) return; // Skip incrementing if paused
+      
+      setProgress(p => {
+        if (p >= 100) {
+          clearInterval(interval);
+          handleNext();
+          return 0;
+        }
+        return p + 1;
+      });
     }, 150);
-
-    // 2. Timer to advance story after 15 seconds
-    const timer = setTimeout(() => {
-      if (storyIndex < currentGroup.stories.length - 1) {
-        setStoryIndex(storyIndex + 1);
-      } else if (groupIndex < groups.length - 1) {
-        setGroupIndex(groupIndex + 1);
-        setStoryIndex(0);
-      } else {
-        handleClose();
-      }
-    }, 15000);
 
     return () => {
       clearInterval(interval);
-      clearTimeout(timer);
       stopAudio();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storyIndex, groupIndex, currentStory]);
 
   const fetchViewers = async () => {
@@ -114,16 +105,44 @@ export function StoryViewer({ groups, initialGroupIndex, onClose }: Props) {
     try {
       const res = await api.get(`/stories/${currentStory._id}/viewers`);
       setViewers(res.data || []);
+    } catch (err) { console.error(err); } finally { setLoadingViewers(false); }
+  };
+
+  const fetchComments = async () => {
+    if (!currentStory) return;
+    try {
+      const data = await getStoryComments(currentStory._id);
+      setComments(data);
+    } catch (err) { console.error(err); }
+  };
+
+  const handleSendComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!commentText.trim() || !currentStory) return;
+    
+    setSendingComment(true);
+    try {
+      const newComment = await addStoryComment(currentStory._id, commentText.trim());
+      setComments(prev => [...prev, newComment]);
+      setCommentText('');
+      isPausedRef.current = false;
     } catch (err) {
-      console.error(err);
+      console.error('Failed to send comment', err);
     } finally {
-      setLoadingViewers(false);
+      setSendingComment(false);
     }
   };
 
-  const handleOpenViewers = () => {
-    setShowViewers(true);
-    fetchViewers();
+  const handleOpenComments = () => {
+    setShowComments(true);
+    setIsPaused(true);
+    fetchComments();
+  };
+
+  const setIsPaused = (paused: boolean) => {
+    isPausedRef.current = paused;
+    if (paused && audioRef.current) audioRef.current.pause();
+    if (!paused && audioRef.current) audioRef.current.play().catch(() => {});
   };
 
   if (!currentStory) return null;
@@ -162,9 +181,9 @@ export function StoryViewer({ groups, initialGroupIndex, onClose }: Props) {
           <img src={getMediaUrl(currentStory.mediaUrl)} alt="story" className="w-full h-full object-contain" />
         )}
 
-        {/* MUSIC STICKER OVERLAY */}
+        {/* MUSIC STICKER */}
         {currentStory.music && (
-          <div className="absolute bottom-16 left-4 right-4 z-20 animate-bounce-slow">
+          <div className="absolute bottom-20 left-4 right-4 z-20 animate-bounce-slow">
             <div className="bg-black/60 backdrop-blur-md rounded-full px-3 py-2 flex items-center gap-3 w-max max-w-full border border-white/20">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={currentStory.music.artworkUrl} alt="music" className="w-8 h-8 rounded-full animate-spin-slow" />
@@ -176,21 +195,49 @@ export function StoryViewer({ groups, initialGroupIndex, onClose }: Props) {
           </div>
         )}
 
-        {/* VIEWERS BUTTON (Only for My Story) */}
-        {isMyStory && (
-          <button 
-            onClick={handleOpenViewers}
-            className="absolute bottom-4 left-4 z-20 flex items-center gap-2 bg-black/60 backdrop-blur-md px-3 py-2 rounded-full border border-white/20 text-white text-xs font-semibold hover:bg-black/80 transition"
-          >
-            <Eye className="w-4 h-4" /> Viewers ({currentStory.viewsCount || 0})
-          </button>
-        )}
+        {/* BOTTOM CONTROLS */}
+        <div className="absolute bottom-0 w-full p-3 z-30 flex items-center gap-2">
+          {/* Comment Input */}
+          <form onSubmit={handleSendComment} className="flex-1 relative">
+            <input
+              type="text"
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              onFocus={() => setIsPaused(true)}
+              onBlur={() => setIsPaused(false)}
+              placeholder="Send message..."
+              className="w-full bg-black/40 border border-white/30 rounded-full pl-4 pr-10 py-2.5 text-white placeholder-gray-300 text-sm outline-none focus:border-white"
+            />
+            {commentText.trim() && (
+              <button type="submit" disabled={sendingComment} className="absolute right-2 top-1/2 -translate-y-1/2 text-white p-1">
+                {sendingComment ? <span className="text-[10px]">...</span> : <Send className="w-4 h-4" />}
+              </button>
+            )}
+          </form>
+
+          {/* View Comments Button (if comments exist) */}
+          {comments.length > 0 && (
+             <button onClick={handleOpenComments} className="p-2.5 bg-black/40 rounded-full text-white border border-white/30">
+               <MessageCircle className="w-5 h-5" />
+             </button>
+          )}
+
+          {/* Viewers Button (Only for my story) */}
+          {isMyStory && (
+            <button 
+              onClick={() => { setShowViewers(true); fetchViewers(); }}
+              className="bg-black/40 p-2.5 rounded-full border border-white/30 text-white flex items-center gap-1 text-xs font-semibold"
+            >
+              <Eye className="w-4 h-4" /> {currentStory.viewsCount || 0}
+            </button>
+          )}
+        </div>
 
         {/* VIEWERS MODAL */}
         {showViewers && (
-          <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gray-900 rounded-t-2xl z-30 flex flex-col animate-slide-up">
+          <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gray-900 rounded-t-2xl z-40 flex flex-col animate-slide-up">
             <div className="p-4 border-b border-gray-800 flex items-center justify-between sticky top-0 bg-gray-900 z-10">
-              <h3 className="text-white font-bold text-lg">Story Viewers</h3>
+              <h3 className="text-white font-bold text-lg">Story Viewers ({viewers.length})</h3>
               <button onClick={() => setShowViewers(false)} className="text-gray-400 p-1 bg-gray-800 rounded-full"><X className="w-5 h-5" /></button>
             </div>
             <div className="flex-1 overflow-y-auto p-2">
@@ -200,18 +247,40 @@ export function StoryViewer({ groups, initialGroupIndex, onClose }: Props) {
                 <p className="text-gray-500 text-center mt-4">No viewers yet.</p>
               ) : (
                 viewers.map((v: any) => (
-                  <Link 
-                    key={v._id} 
-                    href={`/profile/${v._id}`} 
-                    onClick={handleClose}
-                    className="flex items-center gap-3 p-3 hover:bg-gray-800 rounded-xl transition"
-                  >
+                  <Link key={v._id} href={`/profile/${v._id}`} onClick={handleClose} className="flex items-center gap-3 p-3 hover:bg-gray-800 rounded-xl transition">
                     <Avatar user={v} size="sm" linkTo={false} />
                     <div>
                       <p className="text-white font-semibold text-sm">{v.name || v.username}</p>
                       <p className="text-gray-400 text-xs">@{v.username}</p>
                     </div>
                   </Link>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* COMMENTS MODAL (Slide up when clicking the comment icon) */}
+        {showComments && (
+          <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gray-900 rounded-t-2xl z-40 flex flex-col animate-slide-up">
+            <div className="p-4 border-b border-gray-800 flex items-center justify-between sticky top-0 bg-gray-900 z-10">
+              <h3 className="text-white font-bold text-lg">Comments</h3>
+              <button onClick={() => { setShowComments(false); setIsPaused(false); }} className="text-gray-400 p-1 bg-gray-800 rounded-full"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {comments.length === 0 ? (
+                <p className="text-gray-500 text-center mt-4">No comments yet.</p>
+              ) : (
+                comments.map((c) => (
+                  <div key={c._id} className="flex gap-3">
+                    <Avatar user={c.author} size="sm" linkTo={false} />
+                    <div>
+                      <p className="text-white text-sm">
+                        <span className="font-bold mr-2">{c.author.username}</span>
+                        {c.text}
+                      </p>
+                    </div>
+                  </div>
                 ))
               )}
             </div>
