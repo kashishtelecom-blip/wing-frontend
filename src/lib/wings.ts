@@ -4,7 +4,20 @@ export interface Wing {
   _id: string;
   title: string;
   content: string;
-  author: { _id: string; username: string; name?: string; email: string; avatarUrl?: string; isVerified?: boolean };
+  author: {
+    _id: string;
+    username: string;
+    name?: string;
+    email: string;
+    avatarUrl?: string;
+    isVerified?: boolean;
+  };
+  page?: {
+    _id: string;
+    name: string;
+    slug: string;
+    avatarUrl?: string;
+  } | null;
   likesCount: number;
   commentsCount: number;
   repostsCount: number;
@@ -23,12 +36,21 @@ export async function getFeed(page = 1, limit = 20) {
   return res.data;
 }
 
-export async function getPublicWings(page = 1, limit = 20) {
-  const res = await api.get('/wings?page=' + page + '&limit=' + limit);
+export async function getPublicWings(page = 1, limit = 20, pageId?: string) {
+  const url = '/wings?page=' + page + '&limit=' + limit + (pageId ? '&pageId=' + pageId : '');
+  const res = await api.get(url);
   return res.data;
 }
 
-export async function createWing(data: { title: string; content: string; isPublished?: boolean }) {
+export async function createWing(data: {
+  title: string;
+  content: string;
+  isPublished?: boolean;
+  isAnonymous?: boolean;
+  scheduledAt?: string;
+  commentsEnabled?: boolean;
+  pageId?: string;
+}) {
   const res = await api.post('/wings', data);
   return res.data;
 }

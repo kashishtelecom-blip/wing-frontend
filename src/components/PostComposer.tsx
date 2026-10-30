@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { Image as ImageIcon, Video, X, Smile, Clock } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Image as ImageIcon, Video, X, Smile, Clock, Building2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { createWing, uploadMedia } from '@/lib/wings';
 import { useAuth } from '@/lib/auth-context';
 import { EmojiPicker } from './EmojiPicker';
+import { getMyBusinessPages, BusinessPage } from '@/lib/business';
 
 interface Props {
   onPosted: () => void;
@@ -33,13 +34,21 @@ export function PostComposer({ onPosted }: Props) {
   const [showSchedule, setShowSchedule] = useState(false);
   const [scheduledAt, setScheduledAt] = useState('');
   const [commentsEnabled, setCommentsEnabled] = useState(true);
+  const [myPages, setMyPages] = useState<BusinessPage[]>([]);
+  const [selectedPageId, setSelectedPageId] = useState<string>('');
+
+  useEffect(() => {
+    if (user) {
+      getMyBusinessPages().then(setMyPages).catch(() => {});
+    }
+  }, [user]);
 
   if (!user) return null;
 
   const handleFile = (file: File, type: 'image' | 'video') => {
     const maxSize = type === 'video' ? VIDEO_MAX : IMAGE_MAX;
     if (file.size > maxSize) {
-      setError(type === 'video' ? 'Video must be under 50MB' : 'Image must be under 5MB');
+      setError(type === 'video' ? 'Video must be under 500MB' : 'Image must be under 50MB');
       return;
     }
     setError('');
@@ -88,6 +97,7 @@ export function PostComposer({ onPosted }: Props) {
         isAnonymous,
         scheduledAt: scheduledAt || undefined,
         commentsEnabled,
+        pageId: selectedPageId || undefined, // ✅ Include the selected page
       } as any);
 
       if (mediaFile && wing._id) {
@@ -101,6 +111,7 @@ export function PostComposer({ onPosted }: Props) {
       setScheduledAt('');
       setShowSchedule(false);
       setCommentsEnabled(true);
+      setSelectedPageId('');
       clearMedia();
       setUploadProgress('');
       onPosted();
@@ -259,6 +270,22 @@ export function PostComposer({ onPosted }: Props) {
               >
                 🎭 {isAnonymous ? 'Anon' : t('public')}
               </button>
+
+              {myPages.length > 0 && (
+                <div className="relative inline-flex items-center">
+                  <Building2 className="w-4 h-4 text-blue-500 absolute left-2 pointer-events-none" />
+                  <select
+                    value={selectedPageId}
+                    onChange={(e) => setSelectedPageId(e.target.value)}
+                    className="appearance-none bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-semibold pl-8 pr-6 py-1.5 rounded-full outline-none cursor-pointer hover:bg-blue-100 transition"
+                  >
+                    <option value="">Post as @{user.username}</option>
+                    {myPages.map((p) => (
+                      <option key={p._id} value={p._id}>Post as {p.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <button
                 type="button"
