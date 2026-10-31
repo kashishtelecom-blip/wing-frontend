@@ -44,6 +44,7 @@ export function WingCard({ wing, onDeleted }: Props) {
   const [displayContent, setDisplayContent] = useState(wing.content);
   const [editCount, setEditCount] = useState<number>((wing as any).editCount || 0);
 
+  // ─── STATE AND DERIVED VALUES ───
   const isAnonymous = (wing as any).isAnonymous;
   const hasAuthor = !!wing.author?._id;
 
@@ -54,6 +55,12 @@ export function WingCard({ wing, onDeleted }: Props) {
   const authorVerified = (wing.author as any)?.isVerified;
   const authorAvatar = (wing.author as any)?.avatarUrl;
 
+  const isBusinessPage = !!wing.page;
+  const displayName = isBusinessPage ? wing.page!.name : (wing.author?.name || wing.author?.username || 'Unknown');
+  const displayUsername = isBusinessPage ? wing.page!.slug : wing.author?.username || '';
+  const profileLink = isBusinessPage ? `/business/${wing.page!.slug}` : `/profile/${wing.author?._id || ''}`;
+
+  // ─── HANDLERS ───
   const handleCardClick = (e: React.MouseEvent<HTMLElement>) => {
     const target = e.target as HTMLElement;
     if (target.closest('button') || target.closest('a') || target.closest('video') || target.closest('form') || target.closest('input') || target.closest('textarea')) return;
@@ -141,10 +148,22 @@ export function WingCard({ wing, onDeleted }: Props) {
       >
         <div className="p-4">
           <div className="flex gap-3">
+            {/* AVATAR */}
             {isAnonymous || !hasAuthor ? (
               <div className="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 font-semibold flex-shrink-0">
                 🎭
               </div>
+            ) : isBusinessPage ? (
+              <Link href={profileLink} className="flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-lg overflow-hidden">
+                  {wing.page!.avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={wing.page!.avatarUrl} alt={wing.page!.name} className="w-full h-full object-cover" />
+                  ) : (
+                    wing.page!.name.charAt(0).toUpperCase()
+                  )}
+                </div>
+              </Link>
             ) : (
               <Avatar
                 user={{
@@ -161,41 +180,35 @@ export function WingCard({ wing, onDeleted }: Props) {
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-1.5 text-sm flex-wrap min-w-0">
                   {isAnonymous || !hasAuthor ? (
-                    <span className="font-semibold text-gray-700 dark:text-gray-300 italic">
-                      Anonymous
-                    </span>
+                    <span className="font-semibold text-gray-700 dark:text-gray-300 italic">Anonymous</span>
                   ) : (
                     <>
-                      <Link
-                        href={'/profile/' + (wing.author?._id || '')}
-                        className="font-semibold text-gray-900 dark:text-white hover:underline"
-                      >
-                        {wing.author.name || wing.author.username}
+                      <Link href={profileLink} className="font-semibold text-gray-900 dark:text-white hover:underline">
+                        {displayName}
                       </Link>
-                      {authorVerified && <VerifiedBadge />}
+                      {isBusinessPage && (
+                        <span className="text-[10px] bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded font-bold">
+                          PAGE
+                        </span>
+                      )}
+                      {!isBusinessPage && authorVerified && <VerifiedBadge />}
                       <span className="text-gray-500 dark:text-gray-400">
-                        @{wing.author.username}
+                        @{displayUsername}
                       </span>
                     </>
                   )}
                   <span className="text-gray-400">·</span>
-                  <span className="text-gray-500 dark:text-gray-400">
-                    {timeAgo(wing.createdAt)}
-                  </span>
+                  <span className="text-gray-500 dark:text-gray-400">{timeAgo(wing.createdAt)}</span>
                   {editCount > 0 && (
                     <>
                       <span className="text-gray-400">·</span>
-                      <span className="text-gray-500 dark:text-gray-400 text-xs italic">
-                        {t('edited')}
-                      </span>
+                      <span className="text-gray-500 dark:text-gray-400 text-xs italic">{t('edited')}</span>
                     </>
                   )}
                   {(wing as any).scheduledAt && !wing.isPublished && (
                     <>
                       <span className="text-gray-400">·</span>
-                      <span className="text-green-600 dark:text-green-400 text-xs font-semibold">
-                        🕐 Scheduled
-                      </span>
+                      <span className="text-green-600 dark:text-green-400 text-xs font-semibold">🕐 Scheduled</span>
                     </>
                   )}
                 </div>
@@ -214,22 +227,13 @@ export function WingCard({ wing, onDeleted }: Props) {
                     <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 py-1 z-50">
                       {isOwner && (
                         <>
-                          <button
-                            onClick={openEditDialog}
-                            className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm text-gray-800 dark:text-gray-200"
-                          >
+                          <button onClick={openEditDialog} className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm text-gray-800 dark:text-gray-200">
                             <Pencil className="w-4 h-4" /> {t('edit')}
                           </button>
-                          <button
-                            onClick={handlePin}
-                            className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm text-gray-800 dark:text-gray-200"
-                          >
+                          <button onClick={handlePin} className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm text-gray-800 dark:text-gray-200">
                             <Pin className="w-4 h-4" /> {t('pin')}
                           </button>
-                          <button
-                            onClick={handleDelete}
-                            className="w-full flex items-center gap-2 px-3 py-2 hover:bg-red-50 dark:hover:bg-red-950/40 text-sm text-red-500"
-                          >
+                          <button onClick={handleDelete} className="w-full flex items-center gap-2 px-3 py-2 hover:bg-red-50 dark:hover:bg-red-950/40 text-sm text-red-500">
                             <Trash2 className="w-4 h-4" /> {t('delete')}
                           </button>
                         </>
@@ -253,9 +257,7 @@ export function WingCard({ wing, onDeleted }: Props) {
               </div>
 
               {displayTitle && (
-                <h3 className="font-semibold text-gray-900 dark:text-white mt-1">
-                  {displayTitle}
-                </h3>
+                <h3 className="font-semibold text-gray-900 dark:text-white mt-1">{displayTitle}</h3>
               )}
               <p className="text-gray-800 dark:text-gray-200 mt-1 whitespace-pre-wrap break-words">
                 <RichText text={displayContent || ''} />
@@ -278,16 +280,8 @@ export function WingCard({ wing, onDeleted }: Props) {
               )}
 
               {wing.videoUrl && (
-                <div
-                  className="mt-3 rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-black"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <video
-                    src={getMediaUrl(wing.videoUrl)}
-                    controls
-                    className="w-full max-h-96"
-                    preload="metadata"
-                  />
+                <div className="mt-3 rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-black" onClick={(e) => e.stopPropagation()}>
+                  <video src={getMediaUrl(wing.videoUrl)} controls className="w-full max-h-96" preload="metadata" />
                 </div>
               )}
 
@@ -298,11 +292,7 @@ export function WingCard({ wing, onDeleted }: Props) {
                     e.stopPropagation();
                     setShowComments(!showComments);
                   }}
-                  className={
-                    'flex items-center gap-1 transition ' +
-                    (showComments ? 'text-blue-500' : 'hover:text-blue-500')
-                  }
-                  title={t('comment')}
+                  className={'flex items-center gap-1 transition ' + (showComments ? 'text-blue-500' : 'hover:text-blue-500')}
                 >
                   <MessageCircle className="w-4 h-4" />
                   <span>{commentsCount}</span>
@@ -311,12 +301,7 @@ export function WingCard({ wing, onDeleted }: Props) {
                 <button
                   type="button"
                   onClick={handleRepost}
-                  className={
-                    reposted
-                      ? 'flex items-center gap-1 text-green-500 transition'
-                      : 'flex items-center gap-1 hover:text-green-500 transition'
-                  }
-                  title={t('repost')}
+                  className={reposted ? 'flex items-center gap-1 text-green-500 transition' : 'flex items-center gap-1 hover:text-green-500 transition'}
                 >
                   <Repeat2 className="w-4 h-4" />
                   <span>{repostsCount}</span>
@@ -325,12 +310,7 @@ export function WingCard({ wing, onDeleted }: Props) {
                 <button
                   type="button"
                   onClick={handleLike}
-                  className={
-                    liked
-                      ? 'flex items-center gap-1 text-red-500 transition'
-                      : 'flex items-center gap-1 hover:text-red-500 transition'
-                  }
-                  title={t('like')}
+                  className={liked ? 'flex items-center gap-1 text-red-500 transition' : 'flex items-center gap-1 hover:text-red-500 transition'}
                 >
                   <Heart className={liked ? 'w-4 h-4 fill-current' : 'w-4 h-4'} />
                   <span>{likesCount}</span>
@@ -339,17 +319,12 @@ export function WingCard({ wing, onDeleted }: Props) {
                 <button
                   type="button"
                   onClick={handleBookmark}
-                  className={
-                    bookmarked
-                      ? 'flex items-center gap-1 text-blue-500 transition'
-                      : 'flex items-center gap-1 hover:text-blue-500 transition'
-                  }
-                  title={t('bookmark')}
+                  className={bookmarked ? 'flex items-center gap-1 text-blue-500 transition' : 'flex items-center gap-1 hover:text-blue-500 transition'}
                 >
                   <Bookmark className={bookmarked ? 'w-4 h-4 fill-current' : 'w-4 h-4'} />
                 </button>
 
-                <span className="flex items-center gap-1" title={t('views')}>
+                <span className="flex items-center gap-1">
                   <Eye className="w-4 h-4" />
                   <span>{wing.views}</span>
                 </span>
@@ -368,55 +343,29 @@ export function WingCard({ wing, onDeleted }: Props) {
       </article>
 
       {showReportDialog && (
-        <CopyrightReportDialog
-          wingId={wing._id}
-          onClose={() => setShowReportDialog(false)}
-        />
+        <CopyrightReportDialog wingId={wing._id} onClose={() => setShowReportDialog(false)} />
       )}
 
       {showEditDialog && (
-        <div
-          className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4"
-          onClick={() => !editSaving && setShowEditDialog(false)}
-        >
-          <div
-            className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-lg p-6 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Edit Wing
-            </h2>
+        <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4" onClick={() => !editSaving && setShowEditDialog(false)}>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-lg p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Edit Wing</h2>
             <input
-              type="text"
-              value={editTitle}
-              onChange={(e) => setEditTitle(e.target.value)}
-              placeholder="Title (optional)"
-              maxLength={120}
+              type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)}
+              placeholder="Title (optional)" maxLength={120}
               className="w-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg p-2 mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <textarea
-              value={editContent}
-              onChange={(e) => setEditContent(e.target.value)}
-              placeholder="What's on your mind?"
-              maxLength={800}
+              value={editContent} onChange={(e) => setEditContent(e.target.value)}
+              placeholder="What's on your mind?" maxLength={800}
               className="w-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg p-2 mb-2 h-32 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <div className="text-right text-xs text-gray-500 dark:text-gray-400 mb-3">
-              {editContent.length} / 800
-            </div>
+            <div className="text-right text-xs text-gray-500 dark:text-gray-400 mb-3">{editContent.length} / 800</div>
             <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setShowEditDialog(false)}
-                disabled={editSaving}
-                className="px-4 py-2 rounded-full text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition disabled:opacity-50"
-              >
+              <button onClick={() => setShowEditDialog(false)} disabled={editSaving} className="px-4 py-2 rounded-full text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition disabled:opacity-50">
                 {t('cancel')}
               </button>
-              <button
-                onClick={handleSaveEdit}
-                disabled={editSaving || !editContent.trim()}
-                className="px-5 py-2 rounded-full text-sm font-semibold bg-blue-500 text-white hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
+              <button onClick={handleSaveEdit} disabled={editSaving || !editContent.trim()} className="px-5 py-2 rounded-full text-sm font-semibold bg-blue-500 text-white hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed">
                 {editSaving ? '...' : t('save')}
               </button>
             </div>
