@@ -17,6 +17,7 @@ export interface Wing {
     name: string;
     slug: string;
     avatarUrl?: string;
+    isVerified?: boolean;
   } | null;
   likesCount: number;
   commentsCount: number;

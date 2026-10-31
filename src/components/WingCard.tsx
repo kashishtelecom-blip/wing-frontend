@@ -184,14 +184,17 @@ export function WingCard({ wing, onDeleted }: Props) {
                   ) : (
                     <>
                       <Link href={profileLink} className="font-semibold text-gray-900 dark:text-white hover:underline">
-                        {displayName}
-                      </Link>
-                      {isBusinessPage && (
-                        <span className="text-[10px] bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded font-bold">
-                          PAGE
-                        </span>
-                      )}
-                      {!isBusinessPage && authorVerified && <VerifiedBadge />}
+  {displayName}
+</Link>
+{isBusinessPage && (
+  <span className="text-[10px] bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded font-bold">
+    PAGE
+  </span>
+)}
+{/* 👇 ADD THIS LINE */}
+{isBusinessPage && wing.page?.isVerified && <VerifiedBadge size="sm" />}
+
+{!isBusinessPage && authorVerified && <VerifiedBadge />}
                       <span className="text-gray-500 dark:text-gray-400">
                         @{displayUsername}
                       </span>

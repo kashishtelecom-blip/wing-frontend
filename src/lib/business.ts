@@ -10,6 +10,7 @@ export interface BusinessPage {
   category: string;
   owner: string;
   followers: string[];
+  isVerified: boolean; 
 }
 
 export async function createBusinessPage(data: {

@@ -9,6 +9,7 @@ import { BusinessPage, getBusinessPageBySlug, toggleFollowBusinessPage } from '@
 import { useAuth } from '@/lib/auth-context';
 import { getPublicWings, Wing } from '@/lib/wings';
 import api from '@/lib/api';
+import { VerifiedBadge } from '@/components/VerifiedBadge';
 
 export default function BusinessPageProfile() {
   const { slug } = useParams() as { slug: string };
@@ -122,12 +123,10 @@ export default function BusinessPageProfile() {
                 page.name.charAt(0).toUpperCase()
               )}
             </div>
-            <div className="mb-2">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{page.name}</h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                @{page.slug} · {page.category} · {page.followers?.length || 0} followers
-              </p>
-            </div>
+            <div className="flex items-center gap-1">
+  <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{page.name}</h1>
+  {page.isVerified && <VerifiedBadge size="md" />}
+  </div>
           </div>
 
           <div className="flex items-center gap-2 mb-2">
