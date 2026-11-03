@@ -87,7 +87,6 @@ export function NavBar() {
 
   return (
     <header className="w-full border-b border-gray-200 dark:border-gray-800 sticky top-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur z-30">
-      {/* CHANGED max-w-3xl TO max-w-5xl HERE */}
       <div className="max-w-5xl mx-auto px-3 py-2.5 flex items-center justify-between gap-2">
         <Link href="/" className="flex items-center gap-2 flex-shrink-0">
           <div className="logo-wrap">
@@ -166,7 +165,6 @@ export function NavBar() {
           <MoreMenu />
         </nav>
 
-        {/* RIGHT SIDE - Added flex-shrink-0 and removed overflow issues */}
         <div className="flex items-center gap-1.5 flex-shrink-0">
           <LanguageSwitcher />
           <button
@@ -200,13 +198,15 @@ export function NavBar() {
                 }}
               />
             ) : null}
-            div
+            
+            {/* THIS WAS THE MISSING TAG (<div) */}
+            <div
               className="w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-semibold"
               style={{ display: avatarUrl ? 'none' : 'flex' }}
             >
               {user.username?.[0]?.toUpperCase() || '?'}
             </div>
-            {/* FIXED THE TYPO HERE 👇 */}
+            
             <div className="flex items-center gap-1">
               <span className="text-sm text-gray-700 dark:text-gray-300 hidden lg:inline">
                 @{user.username}
