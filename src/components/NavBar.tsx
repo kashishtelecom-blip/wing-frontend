@@ -86,8 +86,9 @@ export function NavBar() {
       : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800');
 
   return (
-<header className="w-full border-b border-gray-200 dark:border-gray-800 sticky top-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur z-30">
-      <div className="max-w-3xl mx-auto px-3 py-2.5 flex items-center justify-between gap-2">
+    <header className="w-full border-b border-gray-200 dark:border-gray-800 sticky top-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur z-30">
+      {/* CHANGED max-w-3xl TO max-w-5xl HERE */}
+      <div className="max-w-5xl mx-auto px-3 py-2.5 flex items-center justify-between gap-2">
         <Link href="/" className="flex items-center gap-2 flex-shrink-0">
           <div className="logo-wrap">
             <Image
@@ -165,6 +166,7 @@ export function NavBar() {
           <MoreMenu />
         </nav>
 
+        {/* RIGHT SIDE - Added flex-shrink-0 and removed overflow issues */}
         <div className="flex items-center gap-1.5 flex-shrink-0">
           <LanguageSwitcher />
           <button
@@ -204,10 +206,10 @@ export function NavBar() {
             >
               {user.username?.[0]?.toUpperCase() || '?'}
             </div>
-            <span className="text-sm text-gray-700 dark:text-gray-300 hidden lg:inline">
-              @{user.username}
+            <span className="text-sm text-gray-700 dark:text-gray-300 hidden lg:inline truncate max-w-[100px]">
+             @{user.username}
             </span>
-            {isVerified && <VerifiedBadge size="sm" />}
+           {isVerified && <VerifiedBadge size="sm" />}
           </Link>
         </div>
       </div>
