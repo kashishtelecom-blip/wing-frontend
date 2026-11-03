@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -18,6 +17,9 @@ import { RichText } from './RichText';
 import { getMediaUrl } from '@/lib/media';
 import { CopyrightReportDialog } from './CopyrightReportDialog';
 import { CommentsSection } from './CommentsSection';
+import { useState, useEffect, useRef } from 'react'; // Add useEffect and useRef
+import { trackWingView } from '@/lib/earnings';
+import { safeStorage } from '@/lib/safe-storage';
 
 interface Props {
   wing: Wing;
@@ -43,9 +45,11 @@ export function WingCard({ wing, onDeleted }: Props) {
   const [displayTitle, setDisplayTitle] = useState(wing.title);
   const [displayContent, setDisplayContent] = useState(wing.content);
   const [editCount, setEditCount] = useState<number>((wing as any).editCount || 0);
+  const cardRef = useRef<HTMLElement>(null);
+  const [hasTracked, setHasTracked] = useState(false);
 
   // ─── STATE AND DERIVED VALUES ───
-  const isAnonymous = (wing as any).isAnonymous;
+    const isAnonymous = (wing as any).isAnonymous;
   const hasAuthor = !!wing.author?._id;
 
   const liked = likedIds.has(wing._id);
@@ -56,10 +60,10 @@ export function WingCard({ wing, onDeleted }: Props) {
   const authorAvatar = (wing.author as any)?.avatarUrl;
 
   const isBusinessPage = !!wing.page;
+
   const displayName = isBusinessPage ? wing.page!.name : (wing.author?.name || wing.author?.username || 'Unknown');
   const displayUsername = isBusinessPage ? wing.page!.slug : wing.author?.username || '';
   const profileLink = isBusinessPage ? `/business/${wing.page!.slug}` : `/profile/${wing.author?._id || ''}`;
-
   // ─── HANDLERS ───
   const handleCardClick = (e: React.MouseEvent<HTMLElement>) => {
     const target = e.target as HTMLElement;
@@ -140,6 +144,38 @@ export function WingCard({ wing, onDeleted }: Props) {
     }
   };
 
+useEffect(() => {
+    // Only track if it's not the user's own post
+    const isMyPost = user?.userId === wing.author?._id;
+    if (!user || isMyPost || hasTracked || isBusinessPage && user?.userId === (wing.page as any)?.owner) return;
+
+    const viewedKey = `viewed_${wing._id}`;
+    // Check if we already tracked this in the current session
+    if (safeStorage.getItem(viewedKey)) {
+      setHasTracked(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          // Post is visible on screen! Track the view.
+          trackWingView(wing._id);
+          safeStorage.setItem(viewedKey, 'true');
+          setHasTracked(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.5 } // Trigger when 50% of the post is visible
+    );
+
+    if (cardRef.current) {
+      observer.observe(cardRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [wing._id, user, hasTracked, isBusinessPage, wing.author?._id, wing.page]);
+
   return (
     <>
       <article
@@ -160,7 +196,7 @@ export function WingCard({ wing, onDeleted }: Props) {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={wing.page!.avatarUrl} alt={wing.page!.name} className="w-full h-full object-cover" />
                   ) : (
-                    wing.page!.name.charAt(0).toUpperCase()
+                    wing.page!.name?.charAt(0)?.toUpperCase() || 'P'
                   )}
                 </div>
               </Link>

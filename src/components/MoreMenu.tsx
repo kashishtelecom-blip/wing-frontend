@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   List, Users, Rocket, Briefcase, Megaphone, Mic,
-  Settings, MoreHorizontal, BadgeCheck, Bookmark, Sparkles, Shield,
+  Settings, MoreHorizontal, BadgeCheck, Bookmark, Sparkles, Shield, Wallet,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/auth-context';
@@ -27,6 +27,8 @@ export function MoreMenu() {
     { href: '/spaces', label: t('spaces'), Icon: Mic },
     { href: '/waitlist', label: t('invite'), Icon: Sparkles },
     { href: '/settings', label: t('settings'), Icon: Settings },
+    { href: '/creator/earnings', label: 'Creator Earnings', Icon: Wallet },
+
   ];
 
   useEffect(() => {
