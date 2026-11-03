@@ -11,8 +11,9 @@ import { Footer } from '@/components/Footer';
 import { PwaProvider } from '@/components/PwaProvider';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
+import Script from 'next/script';
 
-// ← Force every request to re-render so the locale cookie is always fresh
+// Force dynamic rendering so locale cookie is always fresh
 export const dynamic = 'force-dynamic';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -100,7 +101,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang={locale} suppressHydrationWarning className="overflow-x-hidden">
       <head>
-        {/* Polyfill: replace localStorage/sessionStorage with in-memory fallback if blocked */}
+        {/* Polyfill: safe localStorage for strict mobile browsers */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -116,39 +117,27 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                     get length() { return Object.keys(mem).length; }
                   };
                 }
-                try {
-                  window.localStorage.getItem('__test__');
-                } catch (e) {
-                  try {
-                    Object.defineProperty(window, 'localStorage', {
-                      value: makeMockStore(),
-                      writable: true,
-                      configurable: true
-                    });
-                  } catch (e2) {}
+                try { window.localStorage.getItem('__test__'); }
+                catch (e) {
+                  try { Object.defineProperty(window, 'localStorage', { value: makeMockStore(), writable: true, configurable: true }); } catch (e2) {}
                 }
-                try {
-                  window.sessionStorage.getItem('__test__');
-                } catch (e) {
-                  try {
-                    Object.defineProperty(window, 'sessionStorage', {
-                      value: makeMockStore(),
-                      writable: true,
-                      configurable: true
-                    });
-                  } catch (e2) {}
+                try { window.sessionStorage.getItem('__test__'); }
+                catch (e) {
+                  try { Object.defineProperty(window, 'sessionStorage', { value: makeMockStore(), writable: true, configurable: true }); } catch (e2) {}
                 }
               })();
             `,
           }}
         />
-        {/* Dark mode: applied before hydration to avoid flash */}
+        {/* Dark mode flash prevention */}
         <script
           dangerouslySetInnerHTML={{
             __html:
               "try { if (localStorage.getItem('wing_theme') === 'dark') document.documentElement.classList.add('dark'); } catch(e) {}",
           }}
         />
+        {/* Razorpay Checkout */}
+        <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="afterInteractive" />
       </head>
       <body className={inter.className + ' w-full overflow-x-hidden bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100'}>
         <NextIntlClientProvider locale={locale} messages={messages}>
