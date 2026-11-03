@@ -200,16 +200,19 @@ export function NavBar() {
                 }}
               />
             ) : null}
-            <div
+            div
               className="w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-semibold"
               style={{ display: avatarUrl ? 'none' : 'flex' }}
             >
               {user.username?.[0]?.toUpperCase() || '?'}
             </div>
-            <span className="text-sm text-gray-700 dark:text-gray-300 hidden lg:inline truncate max-w-[100px]">
-             @{user.username}
-            </span>
-           {isVerified && <VerifiedBadge size="sm" />}
+            {/* FIXED THE TYPO HERE 👇 */}
+            <div className="flex items-center gap-1">
+              <span className="text-sm text-gray-700 dark:text-gray-300 hidden lg:inline">
+                @{user.username}
+              </span>
+              {isVerified && <VerifiedBadge size="sm" />}
+            </div>
           </Link>
         </div>
       </div>
