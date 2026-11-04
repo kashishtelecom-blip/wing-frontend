@@ -57,6 +57,8 @@ export interface AdminReport {
   reviewedAt?: string | null;
 }
 
+
+
 // ============ STATS ============
 export async function getAdminStats(): Promise<AdminStats> {
   const res = await api.get('/admin/stats');
@@ -88,6 +90,30 @@ export async function deleteUser(userId: string) {
 
 export async function setUserVerified(userId: string, isVerified: boolean) {
   const res = await api.patch(`/admin/users/${userId}/verified`, { isVerified });
+  return res.data;
+}
+
+// ============ PAYOUTS ============
+export interface AdminPayout {
+  _id: string;
+  pendingBalance: number;
+  lifetimeEarnings: number;
+  user: {
+    _id: string;
+    name: string;
+    username: string;
+    email: string;
+    avatarUrl?: string;
+  };
+}
+
+export async function listPayouts() {
+  const res = await api.get('/admin/payouts');
+  return res.data;
+}
+
+export async function processPayout(userId: string) {
+  const res = await api.post(`/admin/payouts/${userId}/pay`);
   return res.data;
 }
 

@@ -13,13 +13,15 @@ import { Avatar } from '@/components/Avatar';
 import { VerifiedBadge } from '@/components/VerifiedBadge';
 import { timeAgo } from '@/lib/time';
 import {
-  AdminStats, AdminUser, AdminWing, AdminCommunity, AdminReport,
+  AdminStats, AdminUser, AdminWing, AdminCommunity, AdminReport, AdminPayout, // <-- Add AdminPayout
   getAdminStats, listUsers, listWings, listCommunitiesAdmin, listReports,
   setUserRole, setUserActive, deleteUser, deleteWingAdmin,
   deleteCommunityAdmin, updateReportStatus, setUserVerified,
+  listPayouts, processPayout, // <-- Add these
 } from '@/lib/admin';
+import { Wallet, DollarSign } from 'lucide-react'; // <-- Add these icons
 
-type Tab = 'overview' | 'users' | 'wings' | 'communities' | 'reports';
+type Tab = 'overview' | 'users' | 'wings' | 'communities' | 'reports' | 'payouts';
 
 export default function AdminPage() {
   const { user, loading: authLoading } = useAuth();
@@ -33,6 +35,7 @@ export default function AdminPage() {
   const [wings, setWings] = useState<AdminWing[]>([]);
   const [communities, setCommunities] = useState<AdminCommunity[]>([]);
   const [reports, setReports] = useState<AdminReport[]>([]);
+  const [payouts, setPayouts] = useState<AdminPayout[]>([]);
 
   const [userQuery, setUserQuery] = useState('');
   const [wingQuery, setWingQuery] = useState('');
@@ -93,6 +96,15 @@ export default function AdminPage() {
     }
   };
 
+const loadPayouts = async () => {
+    try {
+      const res = await listPayouts();
+      setPayouts(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   useEffect(() => {
     if (authLoading || !user) return;
     if (tab === 'overview') loadStats();
@@ -118,6 +130,11 @@ export default function AdminPage() {
     if (tab === 'reports') loadReports();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, reportFilter]);
+
+useEffect(() => {
+    if (tab === 'payouts') loadPayouts();
+  }, [tab]);
+
 
   const handleSetRole = async (u: AdminUser, role: 'user' | 'admin') => {
     if (!confirm(`Set ${u.username}'s role to ${role}?`)) return;
@@ -208,6 +225,19 @@ export default function AdminPage() {
     }
   };
 
+const handleProcessPayout = async (p: AdminPayout) => {
+    if (!confirm(`Have you sent ₹${p.pendingBalance} to ${p.user.name || p.user.username} via Razorpay? If yes, click OK to reset their balance to 0.`)) return;
+    setWorking(p._id);
+    try {
+      await processPayout(p.user._id);
+      setPayouts((prev) => prev.filter((x) => x._id !== p._id)); // Remove from list
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed');
+    } finally {
+      setWorking(null);
+    }
+  };
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-white dark:bg-gray-950">
@@ -248,6 +278,7 @@ export default function AdminPage() {
     { key: 'wings', label: 'Wings', Icon: FileText },
     { key: 'communities', label: 'Communities', Icon: MessageSquare },
     { key: 'reports', label: 'Reports', Icon: Flag },
+    { key: 'payouts', label: 'Payouts', Icon: Wallet },
   ];
 
   return (
@@ -569,6 +600,72 @@ export default function AdminPage() {
               ))}
               {reports.length === 0 && (
                 <p className="text-center text-gray-500 py-8">No reports</p>
+              )}
+            </div>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  sub,
+  color,
+}: {
+  label: string;
+  value: number;
+  sub?: string;
+  color: string;
+}) {
+  return (
+    <div className="border border-gray-200 dark:border-gray-800 rounded-xl p-4">
+      <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">{label}</p>
+      <p className={'text-2xl font-bold ' + color}>{value.toLocaleString()}</p>
+      {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
+    </div>
+  );
+        {tab === 'payouts' && (
+          <div className="p-6">
+            <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 p-4 rounded-xl mb-6 text-sm">
+              <p><strong>How this works:</strong> Users who have reached the ₹500 threshold appear here. You must manually send them money via your payment gateway (e.g., Razorpay), then click "Mark as Paid" to reset their balance.</p>
+            </div>
+            
+            <div className="space-y-3">
+              {payouts.map((p) => (
+                <div key={p._id} className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-800 rounded-xl">
+                  <div className="flex items-center gap-3">
+                    <Avatar
+                      user={{ _id: p.user._id, username: p.user.username, name: p.user.name, avatarUrl: p.user.avatarUrl }}
+                      size="md"
+                      linkTo={false}
+                    />
+                    <div>
+                      <p className="font-semibold text-gray-900 dark:text-white text-sm">
+                        {p.user.name || p.user.username}
+                      </p>
+                      <p className="text-xs text-gray-500">{p.user.email}</p>
+                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    <p className="text-xl font-bold text-green-500">₹{p.pendingBalance.toFixed(2)}</p>
+                    <p className="text-[10px] text-gray-400 mb-2">Lifetime: ₹{p.lifetimeEarnings.toFixed(2)}</p>
+                    <button
+                      onClick={() => handleProcessPayout(p)}
+                      disabled={working === p._id}
+                      className="bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-full text-xs font-semibold transition disabled:opacity-50 flex items-center gap-1"
+                    >
+                      <DollarSign className="w-3 h-3" />
+                      {working === p._id ? 'Processing...' : 'Mark as Paid'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {payouts.length === 0 && (
+                <p className="text-center text-gray-500 py-8">No pending payouts. Everyone is up to date!</p>
               )}
             </div>
           </div>
