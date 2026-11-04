@@ -15,6 +15,8 @@ export default function CreatorEarningsPage() {
   const [earnings, setEarnings] = useState<CreatorEarnings | null>(null);
   const [loading, setLoading] = useState(true);
   const [isPayoutLoading, setIsPayoutLoading] = useState(false); // New state for payout
+  const [upiId, setUpiId] = useState('');
+  const [savingUpi, setSavingUpi] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) router.push('/login');
@@ -24,6 +26,28 @@ export default function CreatorEarningsPage() {
     if (authLoading || !user) return;
     getMyEarnings().then(setEarnings).catch(console.error).finally(() => setLoading(false));
   }, [authLoading, user]);
+
+useEffect(() => {
+  // Assuming your getMyEarnings or user context returns the user data
+  // If it's in the user context:
+  if (user && (user as any).upiId) {
+    setUpiId((user as any).upiId);
+  }
+}, [user]);
+
+
+const handleSaveUpi = async () => {
+  if (!upiId.trim()) return alert('Please enter a valid UPI ID');
+  setSavingUpi(true);
+  try {
+    await api.patch('/users/me/payout-details', { upiId });
+    alert('UPI ID saved successfully!');
+  } catch (err) {
+    alert('Failed to save UPI ID.');
+  } finally {
+    setSavingUpi(false);
+  }
+};
 
   // New Payout Handler
   const handleRequestPayout = async () => {
@@ -119,7 +143,28 @@ export default function CreatorEarningsPage() {
             </p>
           </div>
         </div>
-
+        {/* Payout Details Card */}
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm mb-6">
+          <h2 className="font-semibold text-gray-900 dark:text-white mb-2">Payout Details</h2>
+          <p className="text-xs text-gray-500 mb-4">You must provide a UPI ID to receive your earnings.</p>
+          
+          <div className="flex gap-2">
+            <input 
+              type="text" 
+              placeholder="yourname@upi" 
+              value={upiId}
+              onChange={(e) => setUpiId(e.target.value)}
+              className="flex-1 border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
+            />
+            <button 
+              onClick={handleSaveUpi}
+              disabled={savingUpi}
+              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition disabled:opacity-50"
+            >
+              {savingUpi ? 'Saving...' : 'Save'}
+            </button>
+          </div>
+        </div>
         {/* Info box */}
         <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-4 border border-blue-100 dark:border-blue-800">
           <h3 className="font-semibold text-blue-900 dark:text-blue-300 mb-1">How earnings work</h3>

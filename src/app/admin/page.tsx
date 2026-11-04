@@ -620,13 +620,20 @@ export default function AdminPage() {
                       size="md"
                       linkTo={false}
                     />
-                    <div>
+                                        <div>
                       <p className="font-semibold text-gray-900 dark:text-white text-sm">
                         {p.user.name || p.user.username}
                       </p>
                       <p className="text-xs text-gray-500">{p.user.email}</p>
+                      {/* ADD THIS: Show UPI ID so you know where to send money */}
+                      {p.user.upiId ? (
+                        <p className="text-xs font-bold text-blue-600 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded mt-1 inline-block">
+                          UPI: {p.user.upiId}
+                        </p>
+                      ) : (
+                        <p className="text-xs font-bold text-red-500 mt-1">No UPI ID provided</p>
+                      )}
                     </div>
-                  </div>
 
                   <div className="text-right">
                     <p className="text-xl font-bold text-green-500">₹{p.pendingBalance.toFixed(2)}</p>
