@@ -230,7 +230,7 @@ export default function AdminPage() {
     setWorking(p._id);
     try {
       await processPayout(p.user._id);
-      setPayouts((prev) => prev.filter((x) => x._id !== p._id)); // Remove from list
+      setPayouts((prev) => prev.filter((x) => x._id !== p._id));
     } catch (err: any) {
       alert(err.response?.data?.message || 'Failed');
     } finally {
