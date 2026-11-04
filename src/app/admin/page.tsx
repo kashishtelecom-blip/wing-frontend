@@ -6,6 +6,7 @@ import Link from 'next/link';
 import {
   Shield, Users, FileText, MessageSquare, AlertTriangle, Loader2,
   Search, Trash2, Ban, CheckCircle, UserCheck, Flag, BadgeCheck,
+  Wallet, DollarSign,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { NavBar } from '@/components/NavBar';
@@ -13,13 +14,12 @@ import { Avatar } from '@/components/Avatar';
 import { VerifiedBadge } from '@/components/VerifiedBadge';
 import { timeAgo } from '@/lib/time';
 import {
-  AdminStats, AdminUser, AdminWing, AdminCommunity, AdminReport, AdminPayout, // <-- Add AdminPayout
+  AdminStats, AdminUser, AdminWing, AdminCommunity, AdminReport, AdminPayout,
   getAdminStats, listUsers, listWings, listCommunitiesAdmin, listReports,
   setUserRole, setUserActive, deleteUser, deleteWingAdmin,
   deleteCommunityAdmin, updateReportStatus, setUserVerified,
-  listPayouts, processPayout, // <-- Add these
+  listPayouts, processPayout,
 } from '@/lib/admin';
-import { Wallet, DollarSign } from 'lucide-react'; // <-- Add these icons
 
 type Tab = 'overview' | 'users' | 'wings' | 'communities' | 'reports' | 'payouts';
 
@@ -96,7 +96,7 @@ export default function AdminPage() {
     }
   };
 
-const loadPayouts = async () => {
+  const loadPayouts = async () => {
     try {
       const res = await listPayouts();
       setPayouts(res.data);
@@ -131,10 +131,10 @@ const loadPayouts = async () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, reportFilter]);
 
-useEffect(() => {
+  useEffect(() => {
     if (tab === 'payouts') loadPayouts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
-
 
   const handleSetRole = async (u: AdminUser, role: 'user' | 'admin') => {
     if (!confirm(`Set ${u.username}'s role to ${role}?`)) return;
@@ -225,7 +225,7 @@ useEffect(() => {
     }
   };
 
-const handleProcessPayout = async (p: AdminPayout) => {
+  const handleProcessPayout = async (p: AdminPayout) => {
     if (!confirm(`Have you sent ₹${p.pendingBalance} to ${p.user.name || p.user.username} via Razorpay? If yes, click OK to reset their balance to 0.`)) return;
     setWorking(p._id);
     try {
@@ -604,29 +604,7 @@ const handleProcessPayout = async (p: AdminPayout) => {
             </div>
           </div>
         )}
-      </main>
-    </div>
-  );
-}
 
-function StatCard({
-  label,
-  value,
-  sub,
-  color,
-}: {
-  label: string;
-  value: number;
-  sub?: string;
-  color: string;
-}) {
-  return (
-    <div className="border border-gray-200 dark:border-gray-800 rounded-xl p-4">
-      <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">{label}</p>
-      <p className={'text-2xl font-bold ' + color}>{value.toLocaleString()}</p>
-      {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
-    </div>
-  );
         {tab === 'payouts' && (
           <div className="p-6">
             <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 p-4 rounded-xl mb-6 text-sm">
