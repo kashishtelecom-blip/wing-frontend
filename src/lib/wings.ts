@@ -43,6 +43,16 @@ export async function getPublicWings(page = 1, limit = 20, pageId?: string) {
   return res.data;
 }
 
+export async function getTrendingHashtags() {
+  const res = await api.get('/wings/trending/hashtags');
+  return res.data;
+}
+
+export async function getTrendingPosts() {
+  const res = await api.get('/wings/trending/posts');
+  return res.data;
+}
+
 export async function createWing(data: {
   title: string;
   content: string;
