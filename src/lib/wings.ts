@@ -100,11 +100,6 @@ export async function getTrendingHashtags(limit = 10) {
   return res.data;
 }
 
-export async function getTrendingHashtags() {
-  const res = await api.get('/wings/trending/hashtags');
-  return res.data;
-}
-
 export async function getTrendingPosts() {
   const res = await api.get('/wings/trending/posts');
   return res.data;
