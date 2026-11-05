@@ -4,15 +4,15 @@ import { useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import api from '@/lib/api';
 import { NavBar } from '@/components/NavBar';
-import { BadgeCheck, Check, Loader2, ShieldCheck } from 'lucide-react';
+import { BadgeCheck, Check, Loader2, ShieldCheck, XCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function SubscribePage() {
-  // 1. Extract refreshUser from useAuth
   const { user, loading: authLoading, refreshUser } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   if (!authLoading && !user) {
     router.push('/login');
@@ -33,8 +33,6 @@ export default function SubscribePage() {
         name: 'Wing',
         description: 'Verified Badge (1 Month)',
         order_id: order.id,
-        
-        // 2. Cleaned up handler
         handler: async function (response: any) {
           try {
             await api.post('/payments/verify', {
@@ -44,8 +42,6 @@ export default function SubscribePage() {
             });
             
             setSuccess(true);
-            
-            // 3. Refresh user data to get the blue tick
             await refreshUser(); 
             
             setTimeout(() => {
@@ -82,6 +78,21 @@ export default function SubscribePage() {
     }
   };
 
+  const handleCancel = async () => {
+    if (!confirm('Are you sure you want to cancel your blue tick? You will lose your verified status immediately.')) return;
+    
+    setCancelling(true);
+    try {
+      await api.delete('/users/me/subscribe');
+      await refreshUser();
+      alert('Subscription cancelled successfully.');
+    } catch (err) {
+      alert('Failed to cancel subscription.');
+    } finally {
+      setCancelling(false);
+    }
+  };
+
   if (success) {
     return (
       <div className="min-h-screen bg-white dark:bg-gray-950 flex flex-col items-center justify-center p-4">
@@ -96,6 +107,39 @@ export default function SubscribePage() {
     );
   }
 
+  // --- NEW: If the user is already verified, show this screen instead of the payment form ---
+  if (user?.isVerified) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-gray-950">
+        <NavBar />
+        <main className="max-w-xl mx-auto p-6 mt-10 text-center">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-100 dark:bg-blue-900/30 rounded-full mb-6">
+            <BadgeCheck className="w-10 h-10 text-blue-600 dark:text-blue-400" />
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">You are Verified</h1>
+          <p className="text-gray-500 dark:text-gray-400 mb-8">
+            Your account has an active blue tick. Thank you for supporting Wing!
+          </p>
+
+          <div className="bg-gray-50 dark:bg-gray-900 rounded-3xl p-6 border border-gray-200 dark:border-gray-800">
+            <button
+              onClick={handleCancel}
+              disabled={cancelling}
+              className="w-full bg-red-50 hover:bg-red-100 text-red-600 font-semibold py-3.5 rounded-xl transition disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {cancelling ? <Loader2 className="w-5 h-5 animate-spin" /> : <XCircle className="w-5 h-5" />}
+              {cancelling ? 'Cancelling...' : 'Cancel Subscription'}
+            </button>
+            <p className="text-xs text-gray-400 mt-3">
+              If you cancel, your blue tick will be removed immediately and you will not be charged again.
+            </p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // --- If NOT verified, show the original payment screen ---
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950">
       <NavBar />
