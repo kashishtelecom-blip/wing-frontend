@@ -8,7 +8,8 @@ import { BadgeCheck, Check, Loader2, ShieldCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function SubscribePage() {
-  const { user, loading: authLoading } = useAuth();
+  // 1. Extract refreshUser from useAuth
+  const { user, loading: authLoading, refreshUser } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -23,32 +24,38 @@ export default function SubscribePage() {
     setLoading(true);
 
     try {
-      // 1. Ask backend to create a Razorpay Order
       const { data: order } = await api.post('/payments/create-order', { amount: 199 });
 
-      // 2. Open the Razorpay Checkout modal
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        amount: order.amount, // Amount in paise (19900)
+        amount: order.amount,
         currency: order.currency,
         name: 'Wing',
         description: 'Verified Badge (1 Month)',
         order_id: order.id,
+        
+        // 2. Cleaned up handler
         handler: async function (response: any) {
           try {
-            // 3. Send the payment details back to backend to verify
             await api.post('/payments/verify', {
               orderId: response.razorpay_order_id,
               paymentId: response.razorpay_payment_id,
               signature: response.razorpay_signature,
             });
             
-            // 4. Success! Show UI and reload to apply the blue tick globally
             setSuccess(true);
-            setTimeout(() => window.location.reload(), 2500);
             
-          } catch (err) {
-            alert('Payment verification failed. Please contact support.');
+            // 3. Refresh user data to get the blue tick
+            await refreshUser(); 
+            
+            setTimeout(() => {
+              window.location.href = '/'; 
+            }, 2000);
+            
+          } catch (err: any) {
+            console.error("Verification error:", err.response?.data || err.message);
+            alert(`Payment verification failed: ${err.response?.data?.message || 'Please contact support.'}`);
+            setLoading(false);
           }
         },
         prefill: {
@@ -56,7 +63,7 @@ export default function SubscribePage() {
           email: user.email,
         },
         theme: {
-          color: '#3b82f6', // Tailwind blue-500
+          color: '#3b82f6',
         },
       };
 
