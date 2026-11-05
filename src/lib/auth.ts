@@ -5,6 +5,9 @@ export interface AuthUser {
   email: string;
   username: string;
   role: string;
+  name?: string;
+  avatarUrl?: string;
+  isVerified?: boolean; // <--- Added
 }
 
 export function saveToken(token: string) {

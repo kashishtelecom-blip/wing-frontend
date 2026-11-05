@@ -614,19 +614,18 @@ export default function AdminPage() {
             <div className="space-y-3">
               {payouts.map((p) => (
                 <div key={p._id} className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-800 rounded-xl">
-                  
-                  {/* LEFT SIDE: Avatar & Details */}
                   <div className="flex items-center gap-3">
                     <Avatar
                       user={{ _id: p.user._id, username: p.user.username, name: p.user.name, avatarUrl: p.user.avatarUrl }}
                       size="md"
                       linkTo={false}
                     />
-                    <div>
+                                        <div>
                       <p className="font-semibold text-gray-900 dark:text-white text-sm">
                         {p.user.name || p.user.username}
                       </p>
                       <p className="text-xs text-gray-500">{p.user.email}</p>
+                      {/* ADD THIS: Show UPI ID so you know where to send money */}
                       {p.user.upiId ? (
                         <p className="text-xs font-bold text-blue-600 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded mt-1 inline-block">
                           UPI: {p.user.upiId}
@@ -635,22 +634,21 @@ export default function AdminPage() {
                         <p className="text-xs font-bold text-red-500 mt-1">No UPI ID provided</p>
                       )}
                     </div>
-                  </div>
+                    {
+                    </div>
 
-                  {/* RIGHT SIDE: Balance & Button */}
                   <div className="text-right">
                     <p className="text-xl font-bold text-green-500">₹{p.pendingBalance.toFixed(2)}</p>
                     <p className="text-[10px] text-gray-400 mb-2">Lifetime: ₹{p.lifetimeEarnings.toFixed(2)}</p>
                     <button
                       onClick={() => handleProcessPayout(p)}
                       disabled={working === p._id}
-                      className="bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-full text-xs font-semibold transition disabled:opacity-50 flex items-center gap-1 ml-auto"
+                      className="bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-full text-xs font-semibold transition disabled:opacity-50 flex items-center gap-1"
                     >
                       <DollarSign className="w-3 h-3" />
                       {working === p._id ? 'Processing...' : 'Mark as Paid'}
                     </button>
                   </div>
-                  
                 </div>
               ))}
               {payouts.length === 0 && (

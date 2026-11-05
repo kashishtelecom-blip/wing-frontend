@@ -1,4 +1,3 @@
-
 import api from './api';
 
 export interface AdminStats {
@@ -57,8 +56,6 @@ export interface AdminReport {
   reviewedAt?: string | null;
 }
 
-
-
 // ============ STATS ============
 export async function getAdminStats(): Promise<AdminStats> {
   const res = await api.get('/admin/stats');
@@ -104,6 +101,7 @@ export interface AdminPayout {
     username: string;
     email: string;
     avatarUrl?: string;
+    upiId?: string; // <--- Added this line
   };
 }
 
