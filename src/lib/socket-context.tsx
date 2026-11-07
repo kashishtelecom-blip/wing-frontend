@@ -4,7 +4,6 @@ import {
   createContext,
   useContext,
   useEffect,
-  useRef,
   useState,
 } from 'react';
 import { io, Socket } from 'socket.io-client';
@@ -31,53 +30,58 @@ const SOCKET_URL = API_URL.replace(/\/api\/?$/, '');
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const socketRef = useRef<Socket | null>(null);
+  const [socket, setSocket] = useState<Socket | null>(null);
   const [connected, setConnected] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const token = getToken();
     if (!user || !token) {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-        socketRef.current = null;
+      if (socket) {
+        socket.disconnect();
+        setSocket(null);
         setConnected(false);
         setOnlineUsers(new Set());
       }
       return;
     }
 
-    const socket = io(SOCKET_URL + '/ws', {
+    const newSocket = io(SOCKET_URL, {
       auth: { token },
-      transports: ['websocket', 'polling'],
+      // 👇 THIS IS THE FIX: Start with polling, then upgrade to websocket
+      transports: ['polling', 'websocket'], 
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
     });
 
-    socket.on('connect', () => {
-      console.log('🔌 Socket connected:', socket.id);
+    newSocket.on('connect', () => {
+      console.log('🔌 Socket connected:', newSocket.id);
       setConnected(true);
     });
-    socket.on('disconnect', (reason) => {
+    
+    newSocket.on('disconnect', (reason) => {
       console.log('❌ Socket disconnected:', reason);
       setConnected(false);
     });
-    socket.on('connect_error', (err) => {
+    
+    newSocket.on('connect_error', (err) => {
       console.warn('Socket connect error:', err.message);
     });
 
-    socket.on('online-users', (ids: string[]) => {
+    newSocket.on('online-users', (ids: string[]) => {
       setOnlineUsers(new Set(ids));
     });
-    socket.on('user-online', ({ userId }: { userId: string }) => {
+    
+    newSocket.on('user-online', ({ userId }: { userId: string }) => {
       setOnlineUsers((prev) => {
         const next = new Set(prev);
         next.add(userId);
         return next;
       });
     });
-    socket.on('user-offline', ({ userId }: { userId: string }) => {
+    
+    newSocket.on('user-offline', ({ userId }: { userId: string }) => {
       setOnlineUsers((prev) => {
         const next = new Set(prev);
         next.delete(userId);
@@ -85,11 +89,11 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       });
     });
 
-    socketRef.current = socket;
+    setSocket(newSocket);
 
     return () => {
-      socket.disconnect();
-      socketRef.current = null;
+      newSocket.disconnect();
+      setSocket(null);
       setConnected(false);
       setOnlineUsers(new Set());
     };
@@ -99,7 +103,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <SocketContext.Provider
-      value={{ socket: socketRef.current, connected, onlineUsers, isOnline }}
+      value={{ socket, connected, onlineUsers, isOnline }}
     >
       {children}
     </SocketContext.Provider>

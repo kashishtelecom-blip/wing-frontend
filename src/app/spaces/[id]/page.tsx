@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { NavBar } from '@/components/NavBar';
 import { Avatar } from '@/components/Avatar';
@@ -13,11 +13,13 @@ export default function SpaceRoom() {
   const { id } = useParams();
   const router = useRouter();
   const { socket } = useSocket();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   
   const [space, setSpace] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [listeners, setListeners] = useState<any[]>([]);
+  
+  const hasJoinedRef = useRef(false);
 
   useEffect(() => {
     api.get(`/spaces/${id}`)
@@ -27,34 +29,39 @@ export default function SpaceRoom() {
   }, [id]);
 
   useEffect(() => {
-    if (!socket || !id || !user || loading) return;
+    if (!socket || !id || !user?.userId || authLoading) return;
 
-    // Join the socket room when the page loads
-    socket.emit('join-space', { 
-      spaceId: id, 
-      user: { 
-        _id: user.userId, 
-        username: user.username, 
-        name: user.name, 
-        avatarUrl: user.avatarUrl 
-      } 
-    });
+    if (!hasJoinedRef.current) {
+      console.log('🟢 Joining space room:', id);
+      socket.emit('join-space', { 
+        spaceId: id, 
+        user: { 
+          _id: user.userId, 
+          username: user.username, 
+          name: user.name, 
+          avatarUrl: user.avatarUrl 
+        } 
+      });
+      hasJoinedRef.current = true;
+    }
 
-    // Listen for updates
     const handleListenersUpdate = (updatedListeners: any[]) => {
+      console.log('📥 Received listeners update:', updatedListeners);
       setListeners(updatedListeners);
     };
 
     socket.on('listeners-updated', handleListenersUpdate);
 
-    // Cleanup when leaving the page
     return () => {
-      socket.emit('leave-space', { spaceId: id });
       socket.off('listeners-updated', handleListenersUpdate);
+      if (hasJoinedRef.current) {
+        socket.emit('leave-space', { spaceId: id });
+        hasJoinedRef.current = false;
+      }
     };
-  }, [socket, id, user, loading]);
+  }, [socket, id, user?.userId, authLoading]);
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
@@ -64,8 +71,15 @@ export default function SpaceRoom() {
 
   if (!space) return <div className="p-8 text-center text-white bg-gray-950 min-h-screen">Space not found.</div>;
 
-  // Filter out the host from the listeners list so we don't show them twice
-  const otherListeners = listeners.filter(l => l._id !== space.host._id);
+  // 👇 THIS IS THE FIX: Explicitly compare strings to ensure the user and host are removed
+  const hostId = space.host?._id;
+  const currentUserId = user?.userId;
+  
+  const otherListeners = listeners.filter((l) => {
+    const isHost = l._id === hostId;
+    const isMe = l._id === currentUserId;
+    return !isHost && !isMe;
+  });
 
   return (
     <div className="min-h-screen bg-gray-950 text-white pb-20">

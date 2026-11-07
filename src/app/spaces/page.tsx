@@ -11,13 +11,31 @@ export default function SpacesPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   
+  // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
 
+  // List of active spaces
+  const [activeSpaces, setActiveSpaces] = useState<any[]>([]);
+  const [fetchingSpaces, setFetchingSpaces] = useState(true);
+
+  // Load active spaces on mount
   useEffect(() => {
     if (!authLoading && !user) router.push('/login');
+    
+    const loadSpaces = async () => {
+      try {
+        const res = await api.get('/spaces');
+        setActiveSpaces(res.data);
+      } catch (err) {
+        console.error('Failed to load spaces', err);
+      } finally {
+        setFetchingSpaces(false);
+      }
+    };
+    loadSpaces();
   }, [user, authLoading, router]);
 
   const handleStartSpace = async () => {
@@ -73,6 +91,42 @@ export default function SpacesPage() {
               Start a Space
             </button>
           </div>
+        </div>
+
+        {/* --- LIVE SPACES LIST --- */}
+        <div className="px-6 pb-6">
+          <h2 className="font-bold text-gray-900 dark:text-white mb-4">Live Now</h2>
+          {fetchingSpaces ? (
+            <div className="text-center py-4"><Loader2 className="w-5 h-5 animate-spin mx-auto text-pink-500" /></div>
+          ) : activeSpaces.length === 0 ? (
+            <p className="text-sm text-gray-500 text-center py-4 bg-gray-50 dark:bg-gray-900 rounded-xl">No live spaces right now. Be the first to start one!</p>
+          ) : (
+            <div className="space-y-3">
+              {activeSpaces.map((space) => (
+                <div 
+                  key={space._id}
+                  onClick={() => router.push(`/spaces/${space._id}`)}
+                  className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-800 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-900 cursor-pointer transition"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                      <Mic className="w-5 h-5 text-red-500 animate-pulse" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-900 dark:text-white">{space.title}</p>
+                      <p className="text-xs text-gray-500 flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-red-500 inline-block animate-pulse"></span>
+                        Hosted by @{space.host.username}
+                      </p>
+                    </div>
+                  </div>
+                  <button className="bg-pink-500 hover:bg-pink-600 text-white px-4 py-1.5 rounded-full text-xs font-semibold">
+                    Join
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="px-6 pb-6 grid grid-cols-2 gap-3">
