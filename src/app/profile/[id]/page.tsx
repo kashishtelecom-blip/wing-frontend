@@ -227,11 +227,12 @@ const handleBlock = async () => {
               ) : (
                 <>
                   <button
-                    onClick={handleMessage}
-                    className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-full transition text-sm"
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                  </button>
+  onClick={handleMessage}
+  className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 font-semibold py-2 px-4 rounded-full transition text-sm"
+  title="Message"
+>
+  <MessageCircle className="w-4 h-4" />
+</button>
                  <button
                     onClick={handleFollow}
                     disabled={working}
