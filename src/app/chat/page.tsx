@@ -6,7 +6,7 @@ import Link from 'next/link';
 import {
   ArrowLeft, Send, MessageCircle, Loader2, Image as ImageIcon, X as XIcon,
   Copy, Trash2, Reply as ReplyIcon,
-  Clock, Check, CheckCheck, Mic, Square,
+  Clock, Check, CheckCheck, Mic, Square, Search, // <-- ADDED SEARCH ICON
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/auth-context';
@@ -51,7 +51,9 @@ function ChatPageInner() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
   
-  // UPDATED: Added 'audio' to allowed types
+  // NEW: Search state
+  const [searchQuery, setSearchQuery] = useState('');
+
   const [pendingMedia, setPendingMedia] = useState<{
     url: string;
     type: 'image' | 'video' | 'audio';
@@ -67,7 +69,6 @@ function ChatPageInner() {
   } | null>(null);
   const [otherTyping, setOtherTyping] = useState(false);
 
-  // NEW: Recording states
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -213,7 +214,6 @@ function ChatPageInner() {
     };
   }, [contextMenu]);
 
-  // NEW: Cleanup recording on unmount or changing conversation
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -256,7 +256,6 @@ function ChatPageInner() {
     setPendingMedia(null);
   };
 
-  // NEW: Voice Recording Functions
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -431,23 +430,47 @@ function ChatPageInner() {
     : null;
   const isMyMenuMsg = menuMsg?.sender._id === user.userId;
 
+  // Filter conversations based on search query
+  const filteredConversations = conversations.filter((conv) => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    
+    const nameMatch = (conv.other?.name || '').toLowerCase().includes(query);
+    const usernameMatch = (conv.other?.username || '').toLowerCase().includes(query);
+    const messageMatch = conv.lastMessage?.text?.toLowerCase().includes(query);
+    
+    return nameMatch || usernameMatch || messageMatch;
+  });
+
   return (
     <div className="h-[100dvh] flex flex-col overflow-hidden bg-white dark:bg-gray-950">
       <NavBar />
       <main className="flex-1 flex max-w-4xl mx-auto w-full overflow-hidden">
        <div className={sidebarClass + " h-full"}>
           <div className="p-4 border-b border-gray-200 dark:border-gray-800">
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">{t('title')}</h1>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-3">{t('title')}</h1>
+            
+            {/* 👇 SEARCH BAR START 👇 */}
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search messages or users..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-sm outline-none focus:border-blue-400 dark:text-white transition"
+              />
+            </div>
+            {/* 👆 SEARCH BAR ENDS HERE 👆 */}
+
           </div>
           <div className="flex-1 overflow-y-auto">
-            {conversations.length === 0 ? (
+            {filteredConversations.length === 0 ? (
               <div className="p-8 text-center text-gray-500 dark:text-gray-400 text-sm">
-                {t('noConversations')}.
-                <br />
-                {t('emptyHint')}.
+                {searchQuery ? 'No conversations found.' : `${t('noConversations')}.`}
               </div>
             ) : (
-              conversations.map((conv) => (
+              filteredConversations.map((conv) => (
                 <button
                   key={conv._id}
                   onClick={() => setActiveConv(conv)}
