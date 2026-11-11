@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/auth-context';
 import { NavBar } from '@/components/NavBar';
 import { VerifiedBadge } from '@/components/VerifiedBadge';
 import api from '@/lib/api';
+const { user, loading: authLoading, logout, refreshUser } = useAuth();
 import {
   uploadAvatar, getSubscriptionStatus, SubscriptionStatus,
   getSettings, updateSettings, UserSettings,
@@ -70,7 +71,7 @@ export default function SettingsPage() {
       .finally(() => setLoading(false));
   }, [authLoading, user]);
 
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+nst handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadingAvatar(true);
@@ -78,7 +79,7 @@ export default function SettingsPage() {
     try {
       const updated = await uploadAvatar(file);
       setAvatarUrl(updated.avatarUrl);
-      setTimeout(() => window.location.reload(), 500);
+      if (refreshUser) await refreshUser(); // <-- This updates the NavBar instantly
     } catch (err: any) {
       setError(err.response?.data?.message || 'Avatar upload failed');
     } finally {
@@ -86,13 +87,14 @@ export default function SettingsPage() {
     }
   };
 
-  const handleProfileSave = async (e: React.FormEvent) => {
+    const handleProfileSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     setSaved(false);
     setError('');
     try {
       await api.patch('/users/me', { name, bio });
+      if (refreshUser) await refreshUser(); // <-- Updates NavBar name instantly
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (err: any) {
